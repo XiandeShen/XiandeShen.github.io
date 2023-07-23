@@ -1,0 +1,155 @@
+<html>
+<head>
+<meta charset="utf-8" name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=0, maximum-scale=2.0, user-scalable=yes">
+<title>杰瑞的博客-主页</title>
+<head>
+	<style>
+/*背景色*/
+body {
+	margin: auto;
+	font-family: Arial;
+	padding:0px;
+	background: #707070;
+}
+
+/*导航栏*/
+ul {
+    list-style-type: none;
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+	positon:fixed;
+	top:0;
+	width: 1000px;
+}
+
+li {
+    float: left;
+}
+
+li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+li a:hover {
+    background-color: #505050;
+}
+.active {
+    background-color: #4CAF50;
+}
+
+/*横幅*/
+.daohang {
+	margin: auto;
+	background: url("https://11517868.s21i.faiusr.com/4/ABUIABAEGAAglaP5pAYohoHvXzD9BTiuAw.png");width:800px;height:150px;
+	padding:100px 50px;
+	text-align: left;
+	color:white;
+	margin-top:0px;
+	width: 900px;
+}
+
+/*文章卡片效果*/
+.card{
+  margin:auto;
+  background-color:white;
+  padding:20px 50px;
+  margin-top:5px;
+  width:900px;
+}
+
+.card1{
+  margin:auto;
+  background-color:white;
+  padding:20px 50px;
+  margin-top:0px;
+  width:900px;
+}
+
+.a{
+color: inherit; /*继承父元素颜色*/
+text-decoration: none; /*去除下划线*/
+}
+	
+/* 底部 */
+.dibu {
+  margin: auto;
+  background-color:#333;
+  padding:5px 50px;
+  text-align: center;
+  margin-top: 0px;
+  color:  white;
+  width: 900px;
+}
+
+/* 按钮 */
+.button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+/*文章时间靠右*/
+.time {
+	text-align: right;
+}
+
+	</style>
+</head>
+
+<body>
+	<ul>
+		<li><a class="active" href="D:\我的博客\我的博客-主页.html">主页</a></li>
+		<li><a href="D:\我的博客\我的博客-关于.html">关于我们</a></li>
+	</ul>
+	
+	<div class="daohang">
+		<h1>杰瑞的博客</h1>
+		<h4>暗恋是片深不可测的海，我不会游泳，所以要明恋你。</h4>	
+	</div>
+	
+	<div class="card1">
+		<h4>从生人到爱人，你需要36个问题 | from @别拿恋爱当饭吃</h4>
+		<h5>2023 年 7 月 6 日</h5>
+		<p>实验结果发现，有30%的人，在聊完36个问题后，表示他们和一起参与实验人的关系已经超过了人生中和其他人的任何一段；一段时间之后，有37%的实验者，在上课的时候坐在了一起；而有35%的实验者，在问答过后，已经开始约会。还有一对实验者，在六个月后就结婚了，他们邀请了所有参与实验的人参加了婚礼。</p>
+		<h5 class="time"><a href="D:\我的博客\文章\从生人到爱人，你需要36个问题.html" class="a">点击查看全文</a></h5>
+	</div>
+	
+	<div class="card">
+		<h4>有些人不值得挽回 | from @别拿恋爱当饭吃</h4>
+		<h5>2023 年 7 月 7 日</h5>
+		<p>有些人不值得挽回，有些情况也挽回不了。 放弃这段关系，改变自己，成长自我，迎接下一段感情更重要。</p>
+		<h5 class="time"><a href="D:\我的博客\文章\有些人不值得挽回.html" class="a">点击查看全文</a></h5>
+	</div>
+
+	<div class="card">
+		<h4>暗自祝愿我亲爱的朋友 | from @杰瑞的博客 @王佳慧</h4>
+		<h5>2023 年 7 月 7 日</h5>
+		<p>我不知道我们轻声吟唱的歌词是否能平复慰藉一些时间里的痕迹，我若有所思大概会用自由放逐宁静深远这样的词来形容他。</p>
+		<h5 class="time"><a href="D:\我的博客\文章\暗自祝愿我亲爱的朋友.html" class="a">点击查看全文</a></h5>
+	</div>
+			
+	<div class="card">
+		<h4>没有结果的恋爱值得谈吗 | from @箐南</h4>
+		<h5>2023 年 7 月 7 日</h5>
+		<p>其实有时候我们自己也搞不懂，到底是要一直努力追求结果，还是应该一直享受努力的过程。关于结果，不仅仅是恋爱，人生也是一样。</p>
+		<h5 class="time"><a href="D:\我的博客\文章\没有结果的恋爱值得谈吗.html" class="a">点击查看全文</a></h5>
+	</div>
+	
+	<div class="dibu">
+		<p>© 杰瑞的博客 | 内容均来源网络，如有侵权请联系整改或删除。</p>
+	</div>
+	
+</body>
