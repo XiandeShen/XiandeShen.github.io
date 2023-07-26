@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>XIANDE - 归档（2302）</title>
+<title>XIANDE</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -18,11 +18,56 @@ body {
 }
 
 /* 导航条 */
-.topnav {
-  background-color:#333;
-  color: #f2f2f2;
-  padding: 1px 20px;
-  text-align: left;
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+    width: 100%;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+li {
+    float: left;
+}
+
+li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+li a:hover:not(.active) {
+    background-color: #111;
+}
+
+li.logo {
+    float: right;
+    margin-left: 0px;
+    margin-right: 0px;
+    width: 49px;
+    height: 48px;
+    position: relative;
+    overflow: hidden;
+}
+
+.active {
+    background-color: #4CAF50;
+}
+
+.a {
+   text-decoration: none;
+   color: rgb(81, 81, 81);
+}
+
+/* 横幅 */
+img {
+    height: 100%;
+    width: 100%;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 /* 创建两列 */
@@ -36,30 +81,50 @@ body {
 /* 右侧栏 */
 .rightcolumn {
   float: left;
+  padding-left: 50px;
   padding-right: 100px;
-  padding-left: 5px;
   width: 30%;
 }
 
 /* 文章卡片效果 */
 .card {
-  background-color: white;
   padding: 20px;
+  margin-top: 0px;
 }
 
 /* 列后面清除浮动 */
 .row:after {
   content: "";
-  display: table;
+  display: table; 
   clear: both;
 }
 
-/* 响应式布局 - 宽度小于600px时设置上下布局 */
-@media screen and (max-width: 900px) {
+/* 响应式布局 - 宽度小于1200px时设置上下布局 */
+@media screen and (max-width: 1200px) {
   .leftcolumn, .rightcolumn {   
     width: 100%;
-    padding: 0;
+    padding: 0px;
   }
+}
+
+/* 返回顶部 */
+#myBtn {
+  display: none;
+  position: fixed;
+  bottom: 150px;
+  right: 10px;
+  z-index: 99;
+  border: none;
+  outline: none;
+  background-image:url(http://images.h-ui.net/icon/detail/top/094.gif);
+  color: white;
+  cursor: pointer;
+  padding: 18px 18px;
+  border-radius: 0px;
+}
+
+#myBtn:hover {
+  background-color: #555;
 }
 
 /* 底部样式 */
@@ -68,30 +133,24 @@ body {
   color: #333;
   padding: 20px 22px;
   text-align: center;
+  margin-top: 0px;
 }
 </style>
 </head>
 <body>
 
-<div class="topnav">
-    <h2>XIANDE BLOG</h2>
-</div>
+  <ul>
+    <li><a class="active" href="http://www.xdblog.top/home.html">主页</a></li>
+    <li><a href="http://www.xdblog.top/daily.html">日常</a></li>
+  </ul>
 
 <div class="row">
+
   <div class="leftcolumn">
 
     <div class="card">
-      <h3>硬盘7200转和5400转怎么分别？</h3>
-      <h5>2023年7月26日</h5>
-      <p>移动硬盘7200转和5400转的区别微乎其微，因为硬盘的性能主要取决于传输速度，而影响传输速度的关键有两个：硬盘带宽和硬盘内部速度。</p>
-      <p>硬盘带宽是指硬盘和外界交换的最大速度，而硬盘内部速度由于硬盘是有机械设备的，所以转速、硬盘磁头寻址等都需要时间。即使老旧的硬盘，硬盘的内部速度也能够达到40mb/s。因为移动硬盘的供电和移动性等原因，它们的性能与老旧的硬盘相似，7200转的移动硬盘的内部速度也只有30mb/s，而5400转的的内部速度则在20mb/s左右。因此，移动硬盘向外传输数据的最大速度也只有20mb/s</p>
-      <p>然而，不幸的是，因为移动硬盘是通过USB来传输，而USB最大传输速率只有3-5mb/s，所以无论是7200转的移动硬盘还是5400转的，它们向外传输数据的速度都不会超过USB本身的最大速度，也就是3-5mb/s。</p>
-      <p>因此，在选择移动硬盘时，最好选择5400转的，因为移动设备强调稳定性。</p>
-    </div>  
-
-    <div class="card">
       <h3>你为什么带着笔记本泡在星巴克？</h3>
-      <h5>2023年7月26日</h5>
+      <h5>2023年1月3日</h5>
       <p>无意间看到这个话题心里感到一阵莫名的心酸，我想我们被误解了。因为在网上很人讨论说“你看那个人，有人从他身旁经过的时候他就装作很认真的在工作，没人的时候他就在那杵着，真有意思。”这些人在某些角度上可能是对的，但什么事情都不是绝对的。</p>
       <p>因为我平时是一个很喜欢带着笔记本电脑去咖啡店发呆的人，但我从来没有觉得我带着笔记本坐在星巴克就高人一等，也从来没有想过把自己伪装成职场精英。相反，是因为有很多人独自在外地工作，比如我，又不想融入自己不喜欢的领域，身边既没有亲人，也没有志同道合的朋友。因此我大部分的时间都是在互联网上度过的。</p>
       <p>我会在休息日去咖啡厅点一杯美式解渴，拿出笔记本看看最近写的笔记，又或者给自己的Blog添一些新的创意。这都是我需要用一台笔记本来完成的，他们说的对，带笔记本去咖啡厅不一定是办公，但也绝对不是去当气氛组的。</p>
@@ -99,14 +158,14 @@ body {
 
     <div class="card">
       <h3>努力的回报是成长，而不一定是成功</h2>
-      <h5>2023年7月26日</h5>
+      <h5>2023年2月5日</h5>
       <p>努力的回报是成长，而不是成功。如果你误解的话，就会产生“努力是无用的”的想法。如果你努力，你一定会成长。成功或失败是运气，成长或失败是选择。如果你没有意识到自己的成长就认为自己的努力白费了，这对自己不公平。</p>
     </div>
-  
+
     <div class="card">
-      <h3>不必讨好别人，也不用迷失自己</h2>
-      <h5>2023年7月26日</h5>
-      <p>时间在溜走，我们也在成长。不得不承认，时间改变了很多人，很多事。时间会抚平忧伤，也会沉淀过往，会看到自己，也会看清他人。那些情绪，回忆其实都是真实存在过的，不要频频回头看了。山有顶峰，湖有彼岸。在人生漫漫长途中，末来会越来越好的，浪漫主义的花会盛开在理想主义的土壤上</p>
+      <h3>人为什么要喝酒？因为不喝酒的时候不快乐</h2>
+      <h5>2023年3月21日</h5>
+      <p>人为什么要喝酒？因为不喝酒的时候不快乐。你说我为什么要熬夜，因为我的生活是空虚的。那我问你，你为什么不在白天去填补你的空虚，而非要熬夜来填补你的空虚呢？因为很简单，白天的世界是不属于你的。因为我要睡觉，我又要工作，我没有时间娱乐。我为了要让自己的生活有意义，所以我不得不晚上减少我睡眠的时间来获得我生活的意义。</p>
     </div>
 
   </div>
@@ -115,34 +174,49 @@ body {
 
   <div class="rightcolumn">
 
-
     <div class="card">
-      <h3>6Gb/s的7200转机械硬盘插在sata2.0接口上性能会打折扣吗？</h3>
-      <h5>2023年7月26日</h5>
-      <p>SATA3.0版本接口的机械硬盘接在主板的SATA2.0接口上，不会影响硬盘性能，因为机械硬盘的性能瓶颈在硬盘自身；</p>
-      <p>SATA2.0版本的SATA端口，提供的数据通信带宽为300MB/s，而常用机械硬盘最大的持续传输速度不会超过250MB/s；</p>
-      <p>数据传输速度受硬盘转速、主板、CPU和内存等多个硬件的影响；</p>
+      <h2>联系我们</h2>
+      <p>🐧 1422654775</p>
+      <p>衷心的欢迎您访问我的博客，希望博客中的内容可以为您带来帮助。</p>
+      <p></p>
     </div>
 
     <div class="card">
-      <h3>人为什么要喝酒？因为不喝酒的时候不快乐</h2>
-      <h5>2023年7月26日</h5>
-      <p>人为什么要喝酒？因为不喝酒的时候不快乐。你说我为什么要熬夜，因为我的生活是空虚的。那我问你，你为什么不在白天去填补你的空虚，而非要熬夜来填补你的空虚呢？因为很简单，白天的世界是不属于你的。因为我要睡觉，我又要工作，我没有时间娱乐。我为了要让自己的生活有意义，所以我不得不晚上减少我睡眠的时间来获得我生活的意义。</p>
-    </div>
-
-    <div class="card">
-      <h3>有些人不值得挽回</h3>
-      <h5>2023年7月26日</h5>
-      <p>有些人不值得挽回，有些情况也挽回不了。 放弃这段关系，改变自己，成长自我，迎接下一段感情更重要。就算暂时没有下一段感情也没事，自己精神独立，心理强大也可以很快乐。</p>
+      <h2>免责声明</h2>
+      <p>刊载的所有内容，包括文字、图片、音频、视频、软件、程序、以及网页版式设计等均在网上搜集。</p>
+      <p>菜鸟教程提供的内容仅用于个人学习、研究或欣赏。我们不保证内容的正确性。通过使用本站内容随之而来的风险与本站无关</p>
+      <p>访问者可将本网站提供的内容或服务用于个人学习、研究或欣赏，以及其他非商业性或非盈利性用途，但同时应遵守著作权法及其他相关法律的规定，不得侵犯本网站及相关权利人的合法权利。</p>
+      <p style="color: red;">本网站内容原作者如不愿意在本网站刊登内容，或者内容不符的，请及时通知本站，予以删除。</p>
     </div>
 
   </div>
-
+  
 </div>
 
 <div class="footer">
   <h4>©2023 XIANDE BLOG | 请放心使用，本站永久在线托管于GitHub</H4>
 </div>
-  
+
+<button onclick="topFunction()" id="myBtn" title="回到顶部"></button>
+
+<script>
+  // 当网页向下滑动 20px 出现"返回顶部" 按钮
+  window.onscroll = function() {scrollFunction()};
+   
+  function scrollFunction() {console.log(121);
+      if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 300) {
+          document.getElementById("myBtn").style.display = "block";
+      } else {
+          document.getElementById("myBtn").style.display = "none";
+      }
+  }
+   
+  // 点击按钮，返回顶部
+  function topFunction() {
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+  }
+  </script>
+
 </body>
 </html>
