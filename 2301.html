@@ -18,16 +18,41 @@ body {
 }
 
 /* 导航条 */
-.topnav {
-  background-color:#333;
-  color: #f2f2f2;
-  padding: 1px 20px;
-  text-align: left;
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+    position: fixed;
+    top: 0;
+    width: 100%;
+}
+
+li {
+    float: left;
+}
+
+li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+li a:hover:not(.active) {
+    background-color: #111;
+}
+
+.active {
+    background-color: #4CAF50;
 }
 
 /* 创建两列 */
 /* Left column */
 .leftcolumn {   
+  padding-top: 60px;
   float: left;
   padding-left: 100px;
   width: 70%;
@@ -35,6 +60,7 @@ body {
  
 /* 右侧栏 */
 .rightcolumn {
+  padding-top: 60px;
   float: left;
   padding-right: 100px;
   padding-left: 5px;
@@ -45,6 +71,7 @@ body {
 .card {
   background-color: white;
   padding: 20px;
+  margin-top:0px;
 }
 
 /* 列后面清除浮动 */
@@ -73,9 +100,13 @@ body {
 </head>
 <body>
 
-<div class="topnav">
-    <h2>XIANDE BLOG \ 归档</h2>
-</div>
+  <ul>
+    <li><a class="active" href="#home">主页</a></li>
+    <li><a href="#news">新闻</a></li>
+    <li><a href="#contact">联系</a></li>
+    <li><a href="#about">关于</a></li>
+  </ul>
+
 
 <div class="row">
   <div class="leftcolumn"> 
