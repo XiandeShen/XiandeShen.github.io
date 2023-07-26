@@ -12,7 +12,7 @@
 }
 
 body {
-  background: #ffffff;
+  background: #c3c3c3;
   font-family: Arial;
   margin: 0;
 }
@@ -52,7 +52,7 @@ li a:hover:not(.active) {
 /* 创建两列 */
 /* Left column */
 .leftcolumn {   
-  padding-top: 60px;
+  padding-top: 48px;
   float: left;
   padding-left: 100px;
   width: 70%;
@@ -60,10 +60,10 @@ li a:hover:not(.active) {
  
 /* 右侧栏 */
 .rightcolumn {
-  padding-top: 60px;
+  padding-top: 48px;
   float: left;
   padding-right: 100px;
-  padding-left: 5px;
+  padding-left: 10px;
   width: 30%;
 }
 
@@ -71,13 +71,13 @@ li a:hover:not(.active) {
 .card {
   background-color: white;
   padding: 20px;
-  margin-top:0px;
+  margin-top:10px;
 }
 
 /* 列后面清除浮动 */
 .row:after {
   content: "";
-  display: table;
+  display: table; 
   clear: both;
 }
 
@@ -85,7 +85,7 @@ li a:hover:not(.active) {
 @media screen and (max-width: 900px) {
   .leftcolumn, .rightcolumn {   
     width: 100%;
-    padding: 0;
+    padding: 10px;
   }
 }
 
@@ -95,13 +95,14 @@ li a:hover:not(.active) {
   color: #333;
   padding: 20px 22px;
   text-align: center;
+  margin-top: 10px;
 }
 </style>
 </head>
 <body>
 
   <ul>
-    <li><a class="https://www.runoob.com/html/html-tutorial.html" href="#home">主页</a></li>
+    <li><a class="active" href="https://www.runoob.com/cssref/pr-margin-top.html">主页</a></li>
     <li><a href="#news">新闻</a></li>
     <li><a href="#contact">联系</a></li>
     <li><a href="#about">关于</a></li>
