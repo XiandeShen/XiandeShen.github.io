@@ -12,10 +12,10 @@
   }
   
   body {
-    background: #ffffff;
-    font-family: Arial, Helvetica, sans-serif;
-    margin: 0;
-  }
+  background: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+}
   
   /* 导航条 */
   ul {
@@ -23,7 +23,7 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background-color: #333;
+      background-color: whitesmoke;
       width: 100%;
       box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   }
@@ -33,16 +33,17 @@
   }
   
   li a {
-      display: block;
-      color: white;
-      text-align: center;
-      padding: 14px 16px;
-      text-decoration: none;
-      font-size: 17px;
-  }
+    display: block;
+    color: #333;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-family:Arial, Helvetica, sans-serif;
+    font-size: 17px;
+}
   
   li a:hover:not(.active) {
-      background-color: #111;
+      background-color: #dfdfdf;
   }
   
   li.logo {
@@ -64,9 +65,9 @@
      color: rgb(81, 81, 81);
   }
   
-  /* 图像 */
+  /* 横幅 */
   img {
-      height:auto;
+      height: auto;
       width: 100%;
       box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   }
@@ -76,7 +77,8 @@
   .leftcolumn {   
     float: left;
     padding-left: 100px;
-    width: 70%;
+    padding-right: 100px;
+    width: 100%;
   }
    
   /* 右侧栏 */
@@ -91,6 +93,7 @@
   .card {
     padding: 20px;
     margin-top: 0px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   }
   
   /* 文章 */
@@ -141,7 +144,7 @@
   
   /* 底部样式 */
   .footer {
-    background-color:whitesmoke ;
+    background-color:#ffffff ;
     color: #333;
     padding: 20px 22px;
     text-align: center;
@@ -152,12 +155,10 @@
 <body>
 
   <ul>
-    <li><a class="active" href="http://xiandeshen.github.io/daily.html">日常</a></li>
+    <li><a href="http://xiandeshen.github.io/daily.html">日常</a></li>
     <li><a href="http://xiandeshen.github.io/article.html">精选文章</a></li>
     <li style="float: right;"><a href="http://xiandeshen.github.io/about.html">关于</a></li>
   </ul>
-
-  <br>
 
 <div class="row">
 
@@ -165,15 +166,6 @@
 
     <div class="card">
       <img src="https://11517868.s21i.faiusr.com/4/ABUIABAEGAAglaP5pAYohoHvXzD9BTiuAw.png">
-    </div>
-
-  </div>
-
-
-
-  <div class="rightcolumn">
-
-    <div class="card">
       <h3>由衷的欢迎您访问XIANDE BLOG</h3>
       <p>于我而言这里更像是一个笔记本，记录着我遇到过的一切新鲜的事物。有我日常刷微博看到的有趣话题，也有在我遇到技术难题时费尽心思找到的资料。如果这些恰巧可以帮助到您，那将是我莫大的荣幸。</p>
       <p>我没有使用大多数博客站点都喜欢的搭建方法，这里所有的一切均由我独自创作。我很享受搭建过程中遇到的难题，因为它让我充满了对未知事物探索的动力。</p>
