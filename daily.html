@@ -2,37 +2,37 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>日常 - XIANDE</title>
+<title>首页 - XIANDE</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-  * {
-    box-sizing: border-box;
-  }
-  
-  body {
+* {
+  box-sizing: border-box;
+}
+
+body {
   background: #ffffff;
   font-family: Arial, Helvetica, sans-serif;
   margin: 0;
 }
-  
-  /* 导航条 */
-  ul {
-      list-style-type: none;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background-color: #333;
-      width: 100%;
-      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  }
-  
-  li {
-      float: left;
-  }
-  
-  li a {
+
+/* 导航条 */
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+    width: 100%;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+li {
+    float: left;
+}
+
+li a {
     display: block;
     color: white;
     text-align: center;
@@ -40,121 +40,111 @@
     text-decoration: none;
     font-size: 17px;
 }
-  
-  li a:hover:not(.active) {
-      background-color: #111;
+
+li a:hover:not(.active) {
+    background-color: #111;
+}
+
+.active {
+    background-color: #4CAF50;
+}
+
+.a {
+   text-decoration: none;
+   color: rgb(81, 81, 81);
+}
+
+/* 横幅 */
+img {
+    height: 100%;
+    width: 100%;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+/* 创建两列 */
+/* Left column */
+.leftcolumn {   
+  float: left;
+  padding-left: 100px;
+  width: 70%;
+}
+ 
+/* 右侧栏 */
+.rightcolumn {
+  float: left;
+  padding-left: 50px;
+  padding-right: 100px;
+  width: 30%;
+}
+
+/* 文章卡片效果 */
+.card {
+  padding: 20px;
+  margin-top: 0px;
+}
+
+/* 文章 */
+.word {
+    color: black;
+    text-decoration: none;
+}
+/* time */
+.time {
+  text-align:right;
+  color:#444;
+}
+
+/* 列后面清除浮动 */
+.row:after {
+  content: "";
+  display: table; 
+  clear: both;
+}
+
+/* 响应式布局 - 宽度小于1200px时设置上下布局 */
+@media screen and (max-width: 1200px) {
+  .leftcolumn, .rightcolumn {   
+    width: 100%;
+    padding: 0px;
   }
-  
-  li.logo {
-      float: right;
-      margin-left: 0px;
-      margin-right: 5px;
-      width: 100px;
-      height: 48px;
-      position: relative;
-      overflow: hidden;
-  }
-  
-  .active {
-      background-color: #4CAF50;
-  }
-  
-  .a {
-     text-decoration: none;
-     color: rgb(81, 81, 81);
-  }
-  
-  /* 横幅 */
-  img {
-      height: 100%;
-      width: 100%;
-      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  }
-  
-  /* 创建两列 */
-  /* Left column */
-  .leftcolumn {   
-    float: left;
-    padding-left: 100px;
-    width: 70%;
-  }
-   
-  /* 右侧栏 */
-  .rightcolumn {
-    float: left;
-    padding-left: 50px;
-    padding-right: 100px;
-    width: 30%;
-  }
-  
-  /* 文章卡片效果 */
-  .card {
-    padding: 20px;
-    margin-top: 0px;
-  }
-  
-  /* 文章 */
-  .word {
-      color: black;
-      text-decoration: none;
-  }
-  /* time */
-  .time {
-    text-align:right;
-    color:#444;
-  }
-  
-  /* 列后面清除浮动 */
-  .row:after {
-    content: "";
-    display: table; 
-    clear: both;
-  }
-  
-  /* 响应式布局 - 宽度小于1200px时设置上下布局 */
-  @media screen and (max-width: 1200px) {
-    .leftcolumn, .rightcolumn {   
-      width: 100%;
-      padding: 0px;
-    }
-  }
-  
-  /* 返回顶部 */
-  #myBtn {
-    display: none;
-    position: fixed;
-    bottom: 150px;
-    right: 10px;
-    z-index: 99;
-    border: none;
-    outline: none;
-    background-image:url(http://images.h-ui.net/icon/detail/top/094.gif);
-    color: white;
-    cursor: pointer;
-    padding: 18px 18px;
-    border-radius: 0px;
-  }
-  
-  #myBtn:hover {
-    background-color: #555;
-  }
-  
-  /* 底部样式 */
-  .footer {
-    background-color:whitesmoke ;
-    color: #333;
-    padding: 20px 22px;
-    text-align: center;
-    margin-top: 0px;
-  }
-  </style>
+}
+
+/* 返回顶部 */
+#myBtn {
+  display: none;
+  position: fixed;
+  bottom: 150px;
+  right: 10px;
+  z-index: 99;
+  border: none;
+  outline: none;
+  background-image:url(http://images.h-ui.net/icon/detail/top/094.gif);
+  color: white;
+  cursor: pointer;
+  padding: 18px 18px;
+  border-radius: 0px;
+}
+
+#myBtn:hover {
+  background-color: #555;
+}
+
+/* 底部样式 */
+.footer {
+  background-color:whitesmoke ;
+  color: #333;
+  padding: 20px 22px;
+  text-align: center;
+  margin-top: 0px;
+}
+</style>
 </head>
 <body>
 
   <ul>
-    <li><a class="active" href="http://xiandeshen.github.io/home.html">首页</a></li>
-    <li><a href="http://xiandeshen.github.io/daily.html">日常</a></li>
+    <li><a class="active" href="http://xiandeshen.github.io/daily.html">日常</a></li>
     <li><a href="http://xiandeshen.github.io/article.html">精选文章</a></li>
+    <li style="float: right;"><a href="http://xiandeshen.github.io/about.html">关于</a></li>
   </ul>
 
   <br>
@@ -164,22 +154,14 @@
   <div class="leftcolumn">
 
     <div class="card">
-      <h3>你为什么带着笔记本泡在星巴克？</h3>
-      <p>无意间看到这个话题心里感到一阵莫名的心酸，我想我们被误解了。因为在网上很人讨论说“你看那个人，有人从他身旁经过的时候他就装作很认真的在工作，没人的时候他就在那杵着，真有意思。”这些人在某些角度上可能是对的，但什么事情都不是绝对的。</p>
-      <p>因为我平时是一个很喜欢带着笔记本电脑去咖啡店发呆的人，但我从来没有觉得我带着笔记本坐在星巴克就高人一等，也从来没有想过把自己伪装成职场精英。相反，是因为有很多人独自在外地工作，比如我，又不想融入自己不喜欢的领域，身边既没有亲人，也没有志同道合的朋友。因此我大部分的时间都是在互联网上度过的。</p>
-      <p>我会在休息日去咖啡厅点一杯美式解渴，拿出笔记本看看最近写的笔记，又或者给自己的Blog添一些新的创意。这都是我需要用一台笔记本来完成的，他们说的对，带笔记本去咖啡厅不一定是办公，但也绝对不是去当气氛组的。</p>
+      <h3>对于人工智能，你怎么看？</h3>
+      <p>处于数据大时代的我们，每天从睁眼起床到一天的工作，再到晚上休息前。我们周围无时无刻都充斥着关于“人工智能”的产品。家用扫地机，智能零售机，以及我们的医疗系统也开始和人工智能联系起来，那么你对于人工智能是怎么理解的，或者说你对于人工智能，还希望他可以运用到哪些方面呢？<b><a href="http://xiandeshen.github.io/202372702.html" class="word">查看全文</a></b></p>
       <h5 class="time">收录于 2023-07-27</h5>
     </div>
 
     <div class="card">
-      <h3>努力的回报是成长，而不一定是成功</h2>
-      <p>努力的回报是成长，而不是成功。如果你误解的话，就会产生“努力是无用的”的想法。如果你努力，你一定会成长。成功或失败是运气，成长或失败是选择。如果你没有意识到自己的成长就认为自己的努力白费了，这对自己不公平。</p>
-      <h5 class="time">收录于 2023-07-27</h5>
-    </div>
-
-    <div class="card">
-      <h3>人为什么要喝酒？因为不喝酒的时候不快乐</h2>
-      <p>人为什么要喝酒？因为不喝酒的时候不快乐。你说我为什么要熬夜，因为我的生活是空虚的。那我问你，你为什么不在白天去填补你的空虚，而非要熬夜来填补你的空虚呢？因为很简单，白天的世界是不属于你的。因为我要睡觉，我又要工作，我没有时间娱乐。我为了要让自己的生活有意义，所以我不得不晚上减少我睡眠的时间来获得我生活的意义。</p>
+      <h3>Thinkpad T480 2023年还值得入手吗？</h3>
+      <p>ThinkPad T480，在ThinkPad T系列产品家族中，存在这三个之“最”：最后一款搭配 内置 + 外置 双电池组合的产品；最后一款采用两个可插拔内存槽设计的T系列产品；最后一款仍旧保留2.5英寸SATA硬盘位的T系列产品。<b><a href="http://xiandeshen.github.io/202372701.html" class="word">查看全文</a></b></p>
       <h5 class="time">收录于 2023-07-27</h5>
     </div>
 
