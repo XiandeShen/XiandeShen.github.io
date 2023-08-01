@@ -71,14 +71,21 @@
       width: 100%;
       box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   }
+
+  /*视频*/
+  video {
+    height: auto;
+    width: 100%;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  }
   
   /* 创建两列 */
   /* Left column */
   .leftcolumn {   
     float: left;
     padding-left: 200px;
-    padding-right: 200px;
-    width: 100%;
+    padding-right: 0px;
+    width: 65%;
   }
    
   /* 右侧栏 */
@@ -191,13 +198,25 @@
 
   <div class="leftcolumn">
 
-
+    <div class="card">
+      <video loop="loop" controls="controls"><source src="http://xiandeshen.github.io/video/2023080201.mp4" type="video/mp4"></source></video>
+      <h3>安河桥</h3>
+      <p>让我再看你一边，从南到北</p>
+      <h5 class="time">收录于 2023-07-31</h5>
+    </div>
 
   </div>
 
 
 
   <div class="rightcolumn">
+
+    <div class="card">
+      <video loop="loop" controls="controls"><source src="http://xiandeshen.github.io/video/2023080202.mp4" type="video/mp4"></source></video>
+      <h3>认真的老去</h3>
+      <p>忘了什么时候开始，到清晨才能入睡</p>
+      <h5 class="time">收录于 2023-07-31</h5>
+    </div>
 
   </div>
   
