@@ -33,7 +33,7 @@
             position: fixed; inset: 0; z-index: 200;
             background: #000;
             transform: translateY(100%);
-            transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .fullscreen-overlay.open { transform: translateY(0); }
 
@@ -122,9 +122,14 @@
                             <p class="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">{{ library[activeIdx].episodes.length }} Episodes</p>
                         </div>
                     </div>
-                    <div v-if="library[activeIdx].description" class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50 cursor-pointer" @click="expandDesc = !expandDesc">
-                        <div class="text-slate-500 text-xs leading-relaxed font-medium" :class="expandDesc ? '' : 'line-clamp-3'">{{ library[activeIdx].description }}</div>
-                        <div class="text-[10px] font-bold text-indigo-500 mt-2 flex items-center gap-1 uppercase">{{ expandDesc ? '收起详情' : '展开详情' }} <i class="fa-solid" :class="expandDesc ? 'fa-chevron-up' : 'fa-chevron-down'"></i></div>
+                    <div v-if="library[activeIdx].description" class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
+                        <div ref="descContainer" class="text-slate-500 text-xs leading-relaxed font-medium transition-all duration-300" :class="expandDesc ? '' : 'line-clamp-3'">
+                            {{ library[activeIdx].description }}
+                        </div>
+                        <div v-if="isDescOverflow" @click="expandDesc = !expandDesc" class="text-[10px] font-bold text-indigo-500 mt-2 flex items-center gap-1 uppercase cursor-pointer hover:opacity-80 transition w-fit">
+                            {{ expandDesc ? '收起详情' : '展开详情' }} 
+                            <i class="fa-solid" :class="expandDesc ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </div>
                     </div>
                 </div>
 
@@ -148,49 +153,53 @@
 
     <div class="fullscreen-overlay overflow-hidden" :class="{ 'open': isFullscreen }">
         <div class="absolute inset-0 z-0">
-            <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover opacity-40 scale-110 blur-[80px]">
+            <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover opacity-30 scale-110 blur-[100px]">
             <div class="absolute inset-0 bg-black/60"></div>
         </div>
 
-        <div class="relative z-10 h-full flex flex-col px-6 py-8 md:p-16 text-white overflow-y-auto custom-scroll">
-            <div class="flex justify-between items-center mb-6 md:mb-12 flex-shrink-0">
-                <button @click="isFullscreen = false" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-chevron-down"></i></button>
-                <span class="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">正在播放</span>
+        <div class="relative z-10 h-full flex flex-col px-8 py-10 md:px-20 md:py-12 text-white">
+            <div class="flex justify-between items-center mb-8 md:mb-16 flex-shrink-0">
+                <button @click="isFullscreen = false" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 active:scale-90 transition">
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <span class="text-[10px] font-bold uppercase tracking-[0.4em] opacity-40">正在播放</span>
                 <div class="w-10"></div>
             </div>
 
-            <div class="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-20 max-w-5xl mx-auto w-full">
-                <div class="w-48 h-48 sm:w-64 sm:h-64 md:w-96 md:h-96 flex-shrink-0">
-                    <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover rounded-[1.5rem] md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
+            <div class="flex-1 flex flex-col md:flex-row items-center justify-center gap-10 md:gap-24 max-w-6xl mx-auto w-full overflow-hidden">
+                <div class="w-56 h-56 sm:w-64 sm:h-64 md:w-[380px] md:h-[380px] flex-shrink-0">
+                    <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.6)] border border-white/10">
                 </div>
 
-                <div class="flex-1 flex flex-col w-full min-w-0">
-                    <div class="mb-6 md:mb-10 text-center md:text-left">
-                        <h2 v-if="playingTrack" class="text-xl md:text-3xl font-black mb-2 md:mb-4 line-clamp-2 leading-tight tracking-tight">{{ playingTrack.title }}</h2>
-                        <p v-if="playingTrack" class="text-indigo-300 text-sm md:text-lg font-bold opacity-80 uppercase tracking-widest">{{ playingTrack.channelName }}</p>
+                <div class="flex-1 flex flex-col w-full md:max-w-md text-center md:text-left min-w-0">
+                    <div class="mb-8 md:mb-12">
+                        <h2 v-if="playingTrack" class="text-xl md:text-2xl font-black mb-3 md:mb-5 line-clamp-2 leading-tight tracking-tight text-white/95">{{ playingTrack.title }}</h2>
+                        <p v-if="playingTrack" class="text-indigo-400 text-xs md:text-sm font-bold uppercase tracking-[0.2em] opacity-80">{{ playingTrack.channelName }}</p>
                     </div>
 
-                    <div class="mb-6 md:mb-10">
-                        <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full h-1.5 mb-3" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
-                        <div class="flex justify-between text-[10px] md:text-xs font-mono font-bold opacity-40">
+                    <div class="mb-10 md:mb-14 w-full">
+                        <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full h-1 mb-4 opacity-80 hover:opacity-100 transition" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
+                        <div class="flex justify-between text-[10px] md:text-[11px] font-mono font-bold opacity-30 tracking-widest">
                             <span>{{ formatTime(currentTime) }}</span>
                             <span>{{ formatTime(duration) }}</span>
                         </div>
                     </div>
 
-                    <div class="flex flex-col items-center md:items-start gap-8 md:gap-12">
-                        <div class="flex items-center gap-8 md:gap-12">
-                            <button @click="skip(-15)" class="text-xl md:text-3xl opacity-50 hover:opacity-100 active:scale-90 transition"><i class="fa-solid fa-rotate-left"></i></button>
-                            <button @click="togglePlay" class="w-16 h-16 md:w-20 md:h-20 bg-white text-black rounded-full flex items-center justify-center shadow-xl active:scale-95 transition">
-                                <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-2xl md:text-3xl ml-0.5"></i>
+                    <div class="flex flex-col items-center md:items-start gap-10">
+                        <div class="flex items-center gap-10 md:gap-12">
+                            <button @click="skip(-15)" class="text-lg md:text-xl opacity-40 hover:opacity-100 hover:text-indigo-400 transition"><i class="fa-solid fa-rotate-left"></i></button>
+                            <button @click="togglePlay" class="w-16 h-16 md:w-16 md:h-16 bg-white text-black rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition">
+                                <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-xl md:text-2xl ml-0.5"></i>
                             </button>
-                            <button @click="skip(30)" class="text-xl md:text-3xl opacity-50 hover:opacity-100 active:scale-90 transition"><i class="fa-solid fa-rotate-right"></i></button>
+                            <button @click="skip(30)" class="text-lg md:text-xl opacity-40 hover:opacity-100 hover:text-indigo-400 transition"><i class="fa-solid fa-rotate-right"></i></button>
                         </div>
-                        <button @click="changeSpeed" class="px-5 py-2 border border-white/20 rounded-full text-[10px] font-black hover:bg-white/10 active:bg-white/20 transition mb-4 md:mb-0">{{ playbackRate }}x 播放倍速</button>
+                        <button @click="changeSpeed" class="px-5 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold hover:bg-white/10 active:scale-95 transition text-white/80">
+                            {{ playbackRate }}x 播放倍速
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="h-[env(safe-area-inset-bottom)] md:hidden"></div>
+            <div class="h-10 md:h-16 pb-[env(safe-area-inset-bottom)] flex-shrink-0"></div>
         </div>
     </div>
 
@@ -233,21 +242,51 @@
 </div>
 
 <script>
-const { createApp, ref, watch } = Vue;
+const { createApp, ref, watch, nextTick } = Vue;
 createApp({
     setup() {
         const player = ref(null);
         const scrollContainer = ref(null);
+        const descContainer = ref(null);
         const library = ref([]);
         const activeIdx = ref(-1);
         const isPlaying = ref(false);
         const isFullscreen = ref(false);
         const showMobileMenu = ref(false);
         const expandDesc = ref(false);
+        const isDescOverflow = ref(false); // 新增：记录是否溢出
         const playbackRate = ref(1);
         const currentTime = ref(0);
         const duration = ref(0);
         const playingTrack = ref(null);
+
+        // 核心优化：检查文本是否溢出
+        const checkDescOverflow = () => {
+            nextTick(() => {
+                if (descContainer.value) {
+                    const el = descContainer.value;
+                    // 克隆一个不带省略号限制的元素来计算实际高度
+                    const clone = el.cloneNode(true);
+                    clone.style.webkitLineClamp = 'initial';
+                    clone.style.display = 'block';
+                    clone.style.visibility = 'hidden';
+                    clone.style.position = 'absolute';
+                    clone.style.width = el.offsetWidth + 'px';
+                    document.body.appendChild(clone);
+                    
+                    // 如果实际高度大于 3 行的高度（约 18px * 1.6 * 3）
+                    // 简单判断：如果克隆高度 > 容器显示高度
+                    isDescOverflow.value = clone.scrollHeight > el.offsetHeight + 2; 
+                    document.body.removeChild(clone);
+                }
+            });
+        };
+
+        // 切换频道时重置展开状态并重新检查溢出
+        watch(activeIdx, () => {
+            expandDesc.value = false;
+            checkDescOverflow();
+        });
 
         watch(playingTrack, (newTrack) => {
             if (newTrack) {
@@ -282,16 +321,16 @@ createApp({
             if (library.value.length > 0 && activeIdx.value === -1) activeIdx.value = 0;
         };
 
-        return { library, activeIdx, playingTrack, isPlaying, isFullscreen, showMobileMenu, expandDesc, playbackRate, currentTime, duration, scanDirectory, player, scrollContainer,
+        return { library, activeIdx, playingTrack, isPlaying, isFullscreen, showMobileMenu, expandDesc, isDescOverflow, playbackRate, currentTime, duration, scanDirectory, player, scrollContainer, descContainer,
             selectPodcast: (idx) => { activeIdx.value = idx; if (scrollContainer.value) scrollContainer.value.scrollTop = 0; },
             playTrack: (ep) => { playingTrack.value = ep; setTimeout(() => { if (player.value) { player.value.load(); player.value.play(); } }, 50); },
             formatTime: (s) => { if (isNaN(s)) return '0:00'; const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), rs = Math.floor(s%60); return h>0 ? `${h}:${m.toString().padStart(2,'0')}:${rs.toString().padStart(2,'0')}` : `${m}:${rs.toString().padStart(2,'0')}`; },
             togglePlay: () => isPlaying.value ? player.value.pause() : player.value.play(),
             skip: (s) => player.value.currentTime += s,
             seek: (e) => player.value.currentTime = e.target.value,
-            changeSpeed: () => { playbackRate.value = [1, 1.25, 1.5, 2][([1, 1.25, 1.5, 2].indexOf(playbackRate.value) + 1) % 4]; player.value.playbackRate = playbackRate.value; },
-            onUpdate: () => currentTime.value = player.value.currentTime,
-            onLoaded: () => duration.value = player.value.duration
+            changeSpeed: () => { playbackRate.value = [1, 1.25, 1.5, 2][([1, 1.25, 1.5, 2].indexOf(playbackRate.value) + 1) % 4]; if(player.value) player.value.playbackRate = playbackRate.value; },
+            onUpdate: () => currentTime.value = player.value ? player.value.currentTime : 0,
+            onLoaded: () => duration.value = player.value ? player.value.duration : 0
         };
     }
 }).mount('#app');
