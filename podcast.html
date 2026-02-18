@@ -16,8 +16,8 @@
         input[type="range"] {
             -webkit-appearance: none; width: 100%; height: 4px;
             background: #f1f5f9; border-radius: 2px;
-            background-image: linear-gradient(#6366f1, #6366f1);
             background-repeat: no-repeat; outline: none; cursor: pointer;
+            background-image: linear-gradient(#6366f1, #6366f1);
         }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none; height: 16px; width: 16px;
@@ -49,8 +49,6 @@
             animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
 </head>
 <body class="bg-white text-slate-900 h-screen overflow-hidden antialiased select-none">
@@ -115,7 +113,7 @@
                     <div v-for="ep in library[activeIdx].episodes" @click="playTrack(ep)"
                          class="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all active:bg-slate-100 md:hover:bg-slate-50"
                          :class="playingTrack && playingTrack.url === ep.url ? 'bg-indigo-50/50' : ''">
-                        <img :src="ep.image" class="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl object-cover">
+                        <img :src="ep.image" class="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl object-cover shadow-sm">
                         <div class="flex-1 min-w-0">
                             <div class="text-[13px] md:text-sm font-bold truncate leading-snug" :class="playingTrack && playingTrack.url === ep.url ? 'text-indigo-600' : 'text-slate-700'">{{ ep.title }}</div>
                             <div class="text-[9px] md:text-[10px] text-slate-400 font-bold mt-1 uppercase opacity-70">{{ ep.date }}</div>
@@ -149,9 +147,7 @@
 
     <footer v-if="playingTrack" class="player-bottom-bar fixed bottom-0 left-0 right-0 z-[60] px-5 pt-3 md:px-12">
         <div class="absolute top-0 left-0 w-full transform -translate-y-1/2 px-0 flex items-center">
-            <span class="absolute left-4 -top-6 text-[10px] font-mono font-bold text-indigo-500 bg-white px-2 py-0.5 rounded-full shadow-sm md:hidden">
-                {{ formatTime(currentTime) }}
-            </span>
+            <span class="absolute left-4 -top-6 text-[10px] font-mono font-bold text-indigo-500 bg-white px-2 py-0.5 rounded-full shadow-sm md:hidden">{{ formatTime(currentTime) }}</span>
             <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
         </div>
 
@@ -178,7 +174,7 @@
                 <div class="hidden md:flex items-center gap-3 text-[11px] font-mono font-bold text-slate-400 mr-2">
                     <span>{{ formatTime(currentTime) }}</span><span class="opacity-30">/</span><span>{{ formatTime(duration) }}</span>
                 </div>
-                <button @click="changeSpeed" class="w-10 h-10 flex-shrink-0 border border-slate-100 rounded-full flex items-center justify-center text-[9px] font-black text-slate-500">{{ playbackRate }}x</button>
+                <button @click="changeSpeed" class="w-10 h-10 border border-slate-100 rounded-full text-[9px] font-black text-slate-500">{{ playbackRate }}x</button>
             </div>
         </div>
     </footer>
@@ -201,23 +197,49 @@ createApp({
         const duration = ref(0);
         const playingTrack = ref(null);
 
+        // --- 核心功能模块：更新浏览器标签标题和 Favicon ---
+        const updateFavicon = (url) => {
+            const link = document.getElementById('favicon');
+            if (link) link.href = url || "data:image/svg+xml,...";
+        };
+
+        // 监听播放曲目的变化，同步更新标签页信息
+        watch(playingTrack, (newTrack) => {
+            if (newTrack) {
+                document.title = `${newTrack.title} - ${newTrack.channelName}`;
+                updateFavicon(newTrack.image);
+            }
+        });
+        // ----------------------------------------------
+
         const scanDirectory = async (event) => {
             const files = Array.from(event.target.files);
             const rssFiles = files.filter(f => f.name.endsWith('.rss') || f.name.endsWith('.xml'));
             const parser = new DOMParser();
+            
             for (const file of rssFiles) {
-                const text = await file.text();
-                const xml = parser.parseFromString(text, "text/xml");
-                const channelTitle = xml.querySelector("channel > title")?.textContent || file.name;
-                const channelImg = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || xml.querySelector("image url")?.textContent;
-                const episodes = Array.from(xml.querySelectorAll("item")).map(item => ({
-                    title: item.querySelector("title")?.textContent,
-                    url: item.getElementsByTagName("enclosure")[0]?.getAttribute("url"),
-                    date: new Date(item.querySelector("pubDate")?.textContent).toLocaleDateString(),
-                    image: item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || channelImg,
-                    channelName: channelTitle
-                })).filter(e => e.url);
-                if (episodes.length > 0) library.value.push({ name: channelTitle, image: channelImg, episodes });
+                try {
+                    const text = await file.text();
+                    const xml = parser.parseFromString(text, "text/xml");
+                    const channelTitle = xml.querySelector("channel > title")?.textContent || file.name;
+                    
+                    // 去重检查
+                    const isDuplicate = library.value.some(p => p.name === channelTitle);
+                    if (isDuplicate) continue; 
+
+                    const channelImg = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || xml.querySelector("image url")?.textContent;
+                    const episodes = Array.from(xml.querySelectorAll("item")).map(item => ({
+                        title: item.querySelector("title")?.textContent,
+                        url: item.getElementsByTagName("enclosure")[0]?.getAttribute("url"),
+                        date: new Date(item.querySelector("pubDate")?.textContent).toLocaleDateString(),
+                        image: item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || channelImg,
+                        channelName: channelTitle
+                    })).filter(e => e.url);
+                    
+                    if (episodes.length > 0) {
+                        library.value.push({ name: channelTitle, image: channelImg, episodes });
+                    }
+                } catch (e) { console.error("解析失败:", file.name); }
             }
             if (library.value.length > 0 && activeIdx.value === -1) activeIdx.value = 0;
         };
