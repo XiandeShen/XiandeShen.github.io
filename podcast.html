@@ -127,7 +127,7 @@
                     </div>
                 </div>
 
-                <div class="px-4 md:px-12 py-2 space-y-0.5 pb-40">
+                <div class="px-4 md:px-12 py-2 space-y-0.5 pb-60 md:pb-40">
                     <div v-for="ep in library[activeIdx].episodes" @click="playTrack(ep)"
                          class="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all active:bg-slate-100 md:hover:bg-slate-50"
                          :class="playingTrack && playingTrack.url === ep.url ? 'bg-indigo-50/50' : ''">
@@ -210,7 +210,7 @@ createApp({
         const activeIdx = ref(-1);
         const isPlaying = ref(false);
         const showMobileMenu = ref(false);
-        const expandDesc = ref(false); // 恢复折叠状态控制
+        const expandDesc = ref(false);
         const playbackRate = ref(1);
         const currentTime = ref(0);
         const duration = ref(0);
@@ -228,7 +228,6 @@ createApp({
             }
         });
 
-        // 切换节目时重置简介状态
         watch(activeIdx, () => { expandDesc.value = false; });
 
         const scanDirectory = async (event) => {
@@ -245,7 +244,6 @@ createApp({
                     if (library.value.some(p => p.name === channelTitle)) continue; 
 
                     const channelImg = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || xml.querySelector("image url")?.textContent;
-                    // 恢复简介内容解析
                     const channelDesc = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "summary")[0]?.textContent || xml.querySelector("channel > description")?.textContent || "";
 
                     const episodes = Array.from(xml.querySelectorAll("item")).map(item => ({
