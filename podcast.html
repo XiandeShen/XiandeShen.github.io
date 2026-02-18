@@ -43,7 +43,7 @@
             border-top-left-radius: 2rem; border-top-right-radius: 2rem;
             transform: translateY(105%);
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            max-height: 75vh; display: flex; flex-direction: column;
+            max-height: 80vh; display: flex; flex-direction: column;
         }
         .mobile-drawer.open { transform: translateY(0); }
         .drawer-overlay {
@@ -206,10 +206,17 @@
     <div class="drawer-overlay" :class="{ open: showMobileMenu }" @click="showMobileMenu = false"></div>
     <div class="mobile-drawer shadow-2xl" :class="{ open: showMobileMenu }">
         <div class="w-12 h-1.5 bg-slate-100 rounded-full mx-auto my-4"></div>
-        <div class="px-4 pb-10 overflow-y-auto flex-1 custom-scroll">
+        <div class="px-4 pb-4 overflow-y-auto flex-1 custom-scroll">
             <div v-for="(podcast, idx) in library" :key="idx" @click="selectPodcast(idx); showMobileMenu = false" class="flex items-center gap-4 p-4 rounded-2xl mb-2" :class="activeIdx === idx ? 'bg-indigo-600 text-white' : 'bg-slate-50'">
-                <img :src="podcast.image" class="w-12 h-12 rounded-xl object-cover"><span class="font-bold text-sm truncate">{{ podcast.name }}</span>
+                <img :src="podcast.image" class="w-12 h-12 rounded-xl object-cover">
+                <span class="font-bold text-sm truncate">{{ podcast.name }}</span>
             </div>
+        </div>
+        <div class="p-4 border-t border-slate-50 bg-white">
+            <label class="flex items-center justify-center gap-2 bg-indigo-600 text-white py-4 rounded-2xl font-bold cursor-pointer active:scale-95 transition shadow-lg text-sm w-full">
+                <i class="fa-solid fa-plus"></i> 添加目录
+                <input type="file" class="hidden" webkitdirectory @change="scanDirectory(); showMobileMenu = false">
+            </label>
         </div>
     </div>
 
@@ -254,18 +261,16 @@ createApp({
         const isFullscreen = ref(false);
         const showMobileMenu = ref(false);
         const expandDesc = ref(false);
-        const isDescOverflow = ref(false); // 新增：记录是否溢出
+        const isDescOverflow = ref(false);
         const playbackRate = ref(1);
         const currentTime = ref(0);
         const duration = ref(0);
         const playingTrack = ref(null);
 
-        // 核心优化：检查文本是否溢出
         const checkDescOverflow = () => {
             nextTick(() => {
                 if (descContainer.value) {
                     const el = descContainer.value;
-                    // 克隆一个不带省略号限制的元素来计算实际高度
                     const clone = el.cloneNode(true);
                     clone.style.webkitLineClamp = 'initial';
                     clone.style.display = 'block';
@@ -273,16 +278,12 @@ createApp({
                     clone.style.position = 'absolute';
                     clone.style.width = el.offsetWidth + 'px';
                     document.body.appendChild(clone);
-                    
-                    // 如果实际高度大于 3 行的高度（约 18px * 1.6 * 3）
-                    // 简单判断：如果克隆高度 > 容器显示高度
                     isDescOverflow.value = clone.scrollHeight > el.offsetHeight + 2; 
                     document.body.removeChild(clone);
                 }
             });
         };
 
-        // 切换频道时重置展开状态并重新检查溢出
         watch(activeIdx, () => {
             expandDesc.value = false;
             checkDescOverflow();
