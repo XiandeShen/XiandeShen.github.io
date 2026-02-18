@@ -13,7 +13,7 @@
     
     <style>
         [v-cloak] { display: none; }
-        /* 进度条样式 */
+        /* 进度条基础样式 */
         input[type="range"] {
             -webkit-appearance: none; width: 100%; height: 4px;
             background: rgba(255,255,255,0.2); border-radius: 2px;
@@ -30,7 +30,7 @@
         }
         .custom-scroll::-webkit-scrollbar { width: 0px; display: none; }
         
-        /* 全屏层 */
+        /* 全屏播放层 */
         .fullscreen-overlay {
             position: fixed; inset: 0; z-index: 200;
             background: #000;
@@ -40,7 +40,7 @@
         }
         .fullscreen-overlay.open { transform: translateY(0); }
 
-        /* 移动端菜单 */
+        /* 移动端菜单抽屉 */
         .mobile-drawer {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: white; z-index: 100;
@@ -57,13 +57,12 @@
         }
         .drawer-overlay.open { opacity: 1; pointer-events: auto; }
 
-        /* 底部播放控制条 */
+        /* 底部播放栏样式优化 */
         .player-bottom-bar {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
             box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.08);
-            /* 重点：增加底部安全区边距，防止 Chrome 浏览器条遮挡 */
-            padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
+            padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
         }
         .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
@@ -125,6 +124,14 @@
                             <p class="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">{{ library[activeIdx].episodes.length }} Episodes</p>
                         </div>
                     </div>
+                    <div v-if="library[activeIdx].description" class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
+                        <div ref="descContainer" class="text-slate-500 text-xs leading-relaxed font-medium" :class="expandDesc ? '' : 'line-clamp-3'">
+                            {{ library[activeIdx].description }}
+                        </div>
+                        <div v-if="isDescOverflow" @click="expandDesc = !expandDesc" class="text-[10px] font-bold text-indigo-500 mt-2 flex items-center gap-1 uppercase cursor-pointer w-fit">
+                            {{ expandDesc ? '收起详情' : '展开详情' }} <i class="fa-solid" :class="expandDesc ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="px-4 md:px-12 py-2 space-y-0.5">
@@ -138,7 +145,7 @@
                         </div>
                     </div>
 
-                    <div class="pt-16 pb-8 flex flex-col items-center justify-center opacity-20">
+                    <div class="h-32 flex flex-col items-center justify-center opacity-20">
                         <div class="w-8 h-[1px] bg-slate-900 mb-4"></div>
                         <span class="text-[10px] font-bold tracking-[0.2em] uppercase">已显示全部内容</span>
                     </div>
@@ -246,16 +253,37 @@ createApp({
     setup() {
         const player = ref(null);
         const scrollContainer = ref(null);
+        const descContainer = ref(null);
         const library = ref([]);
         const activeIdx = ref(-1);
         const isPlaying = ref(false);
         const isFullscreen = ref(false);
         const showMobileMenu = ref(false);
+        const expandDesc = ref(false);
+        const isDescOverflow = ref(false);
         const playbackRate = ref(1);
         const currentTime = ref(0);
         const duration = ref(0);
         const playingTrack = ref(null);
 
+        const checkDescOverflow = () => {
+            nextTick(() => {
+                if (descContainer.value) {
+                    const el = descContainer.value;
+                    const clone = el.cloneNode(true);
+                    clone.style.webkitLineClamp = 'initial';
+                    clone.style.display = 'block';
+                    clone.style.visibility = 'hidden';
+                    clone.style.position = 'absolute';
+                    clone.style.width = el.offsetWidth + 'px';
+                    document.body.appendChild(clone);
+                    isDescOverflow.value = clone.scrollHeight > el.offsetHeight + 2; 
+                    document.body.removeChild(clone);
+                }
+            });
+        };
+
+        watch(activeIdx, () => { expandDesc.value = false; checkDescOverflow(); });
         watch(playingTrack, (t) => { if (t) { document.title = t.title; const f = document.getElementById('favicon'); if (f) f.href = t.image; } });
 
         const scanDirectory = async (e) => {
@@ -269,6 +297,7 @@ createApp({
                     const title = xml.querySelector("channel > title")?.textContent || f.name;
                     if (library.value.some(p => p.name === title)) continue;
                     const img = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || xml.querySelector("image url")?.textContent;
+                    const desc = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "summary")[0]?.textContent || xml.querySelector("channel > description")?.textContent || "";
                     const episodes = Array.from(xml.querySelectorAll("item")).map(item => ({
                         title: item.querySelector("title")?.textContent,
                         url: item.getElementsByTagName("enclosure")[0]?.getAttribute("url"),
@@ -276,13 +305,13 @@ createApp({
                         image: item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || img,
                         channelName: title
                     })).filter(ep => ep.url);
-                    if (episodes.length > 0) library.value.push({ name: title, image: img, episodes });
+                    if (episodes.length > 0) library.value.push({ name: title, image: img, description: desc, episodes });
                 } catch (err) { console.error("解析失败", f.name); }
             }
             if (library.value.length > 0 && activeIdx.value === -1) activeIdx.value = 0;
         };
 
-        return { library, activeIdx, playingTrack, isPlaying, isFullscreen, showMobileMenu, playbackRate, currentTime, duration, scanDirectory, player, scrollContainer,
+        return { library, activeIdx, playingTrack, isPlaying, isFullscreen, showMobileMenu, expandDesc, isDescOverflow, playbackRate, currentTime, duration, scanDirectory, player, scrollContainer, descContainer,
             selectPodcast: (idx) => { activeIdx.value = idx; if (scrollContainer.value) scrollContainer.value.scrollTop = 0; },
             playTrack: (ep) => { playingTrack.value = ep; setTimeout(() => { if (player.value) { player.value.load(); player.value.play(); } }, 50); },
             formatTime: (s) => { if (isNaN(s)) return '0:00'; const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), rs = Math.floor(s%60); return h>0 ? `${h}:${m.toString().padStart(2,'0')}:${rs.toString().padStart(2,'0')}` : `${m}:${rs.toString().padStart(2,'0')}`; },
