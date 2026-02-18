@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Podcast Player</title>
+    <title>Podcast</title>
     <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23818cf8;stop-opacity:1'/><stop offset='100%25' style='stop-color:%234f46e5;stop-opacity:1'/></linearGradient></defs><rect width='100' height='100' rx='28' fill='url(%23g)'/><path d='M30 50v-10M40 50v-20M50 50v-30M60 50v-20M70 50v-10' stroke='white' stroke-width='8' stroke-linecap='round'/><circle cx='50' cy='70' r='8' fill='white'/></svg>">
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -14,30 +14,61 @@
     <style>
         [v-cloak] { display: none; }
         input[type="range"] {
-            -webkit-appearance: none; width: 100%; height: 4px;
-            background: rgba(255,255,255,0.2); border-radius: 2px;
+            -webkit-appearance: none; width: 100%; height: 6px;
+            background: rgba(255,255,255,0.2); border-radius: 3px;
             background-repeat: no-repeat; outline: none; cursor: pointer;
-            background-image: linear-gradient(#6366f1, #6366f1);
+            background-image: linear-gradient(#fff, #fff);
         }
         .player-bottom-bar input[type="range"] {
             background: #f1f5f9;
             background-image: linear-gradient(#6366f1, #6366f1);
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 16px; width: 16px;
-            border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            -webkit-appearance: none; height: 20px; width: 20px;
+            border-radius: 50%; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
+        .custom-scroll { -webkit-overflow-scrolling: touch; }
         .custom-scroll::-webkit-scrollbar { width: 0px; display: none; }
-        .fullscreen-overlay { position: fixed; inset: 0; z-index: 200; background: #000; transform: translateY(100%); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
+        
+        .fullscreen-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: #000;
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+            display: flex; flex-direction: column;
+        }
         .fullscreen-overlay.open { transform: translateY(0); }
-        .mobile-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: white; z-index: 100; border-top-left-radius: 2rem; border-top-right-radius: 2rem; transform: translateY(105%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); max-height: 85vh; display: flex; flex-direction: column; }
+
+        .mobile-drawer {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; z-index: 100;
+            border-top-left-radius: 2rem; border-top-right-radius: 2rem;
+            transform: translateY(105%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 80vh; display: flex; flex-direction: column;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
         .mobile-drawer.open { transform: translateY(0); }
-        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
         .drawer-overlay.open { opacity: 1; pointer-events: auto; }
-        .player-bottom-bar { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.06); padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem); }
+
+        .player-bottom-bar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.08);
+            padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+        }
+        /* 针对最后一条播客间距的平滑过渡 */
+        .episodes-container {
+            transition: padding-bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .sub-menu-enter-active, .sub-menu-leave-active { transition: all 0.2s ease-out; }
-        .sub-menu-enter-from, .sub-menu-leave-to { opacity: 0; transform: translateY(10px) scale(0.95); }
+        .tap-feedback:active { transform: scale(0.96); opacity: 0.8; transition: all 0.1s; }
     </style>
 </head>
 <body class="bg-white text-slate-900 h-screen overflow-hidden antialiased select-none">
@@ -54,28 +85,13 @@
             </div>
             <h1 class="text-xl font-black tracking-tighter text-slate-800 uppercase">Podcast</h1>
         </div>
-
-        <div class="flex items-center gap-4">
-            <div class="flex items-center bg-slate-100/60 border border-slate-100 rounded-xl px-3 py-1.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                <i class="fa-brands fa-github text-slate-400 mr-2 text-xs"></i>
-                <input v-model="githubRepo" @keyup.enter="syncFromGithub" type="text" placeholder="User/Repo" class="bg-transparent text-[10px] font-bold outline-none w-48 text-slate-600 placeholder:text-slate-300">
-                <div class="flex items-center gap-2 ml-2">
-                    <button v-if="githubRepo" @click="clearGithubRepo" class="text-slate-300 hover:text-red-400 transition" title="移除配置">
-                        <i class="fa-solid fa-circle-xmark text-[10px]"></i>
-                    </button>
-                    <button @click="syncFromGithub" class="text-indigo-500 hover:scale-110 transition">
-                        <i class="fa-solid" :class="isSyncing ? 'fa-rotate animate-spin' : 'fa-arrow-rotate-right'"></i>
-                    </button>
-                </div>
-            </div>
-            <label class="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl font-bold cursor-pointer transition text-xs border border-slate-100">
-                <i class="fa-solid fa-plus text-indigo-500"></i> 本地目录
-                <input type="file" class="hidden" webkitdirectory @change="scanDirectory">
-            </label>
-        </div>
+        <label v-if="library.length > 0" class="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl font-bold cursor-pointer transition text-xs border border-slate-100">
+            <i class="fa-solid fa-plus text-indigo-500"></i> 添加目录
+            <input type="file" class="hidden" webkitdirectory @change="scanDirectory">
+        </label>
     </header>
 
-    <header class="flex items-center justify-between px-6 py-4 md:hidden border-b border-slate-50 bg-white z-30 flex-shrink-0">
+    <header class="flex items-center justify-between px-6 py-4 md:hidden border-b border-slate-50 bg-white z-30 flex-shrink-0 pt-[env(safe-area-inset-top)]">
         <div class="flex items-center gap-2.5">
             <div class="w-7 h-7">
                 <svg viewBox="0 0 100 100" class="w-full h-full">
@@ -85,8 +101,8 @@
             </div>
             <h1 class="text-lg font-black tracking-tighter text-slate-800 uppercase">Podcast</h1>
         </div>
-        <button @click="showMobileMenu = true" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center active:scale-90 transition">
-            <i class="fa-solid fa-list-ul"></i>
+        <button v-if="library.length > 0" @click="showMobileMenu = true" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center active:scale-90 transition">
+            <i class="fa-solid fa-layer-group text-sm"></i>
         </button>
     </header>
 
@@ -106,149 +122,142 @@
             <template v-if="activeIdx !== -1 && library.length > 0">
                 <div class="p-6 md:px-12 md:pt-12 md:pb-6 flex flex-col gap-6 bg-gradient-to-b from-slate-50/50 to-white">
                     <div class="flex flex-row items-center md:items-end gap-5 md:gap-8">
-                        <img :src="library[activeIdx].image" class="w-20 h-20 md:w-44 md:h-44 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl object-cover border-2 md:border-4 border-white">
+                        <img :src="library[activeIdx].image" class="w-24 h-24 md:w-44 md:h-44 rounded-[1.8rem] md:rounded-[2.5rem] shadow-2xl object-cover border-2 md:border-4 border-white">
                         <div class="flex-1 min-w-0">
-                            <h2 class="text-lg md:text-4xl font-black tracking-tight text-slate-800 truncate">{{ library[activeIdx].name }}</h2>
+                            <h2 class="text-xl md:text-4xl font-black tracking-tight text-slate-800 line-clamp-2 md:truncate">{{ library[activeIdx].name }}</h2>
                             <p class="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">{{ library[activeIdx].episodes.length }} Episodes</p>
                         </div>
                     </div>
-                    <div v-if="library[activeIdx].description" class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
-                        <div ref="descContainer" class="text-slate-500 text-xs leading-relaxed font-medium" :class="expandDesc ? '' : 'line-clamp-3'">{{ library[activeIdx].description }}</div>
-                        <div v-if="isDescOverflow" @click="expandDesc = !expandDesc" class="text-[10px] font-bold text-indigo-500 mt-2 flex items-center gap-1 uppercase cursor-pointer w-fit">
+                    <div v-if="library[activeIdx].description" class="bg-slate-50/80 p-5 rounded-3xl border border-slate-100/50">
+                        <div ref="descContainer" class="text-slate-500 text-xs leading-relaxed font-medium" :class="expandDesc ? '' : 'line-clamp-3'">
+                            {{ library[activeIdx].description }}
+                        </div>
+                        <div v-if="isDescOverflow" @click="expandDesc = !expandDesc" class="text-[10px] font-bold text-indigo-500 mt-2.5 flex items-center gap-1 uppercase cursor-pointer w-fit">
                             {{ expandDesc ? '收起详情' : '展开详情' }} <i class="fa-solid" :class="expandDesc ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                         </div>
                     </div>
                 </div>
-                <div class="px-4 md:px-12 py-2 space-y-0.5 pb-48 md:pb-40">
-                    <div v-for="ep in library[activeIdx].episodes" @click="playTrack(ep)" class="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all active:bg-slate-100 md:hover:bg-slate-50" :class="playingTrack && playingTrack.url === ep.url ? 'bg-indigo-50/50' : ''">
-                        <img :src="ep.image" class="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover shadow-sm">
-                        <div class="flex-1 min-w-0"><div class="text-[13px] md:text-sm font-bold truncate text-slate-700" :class="playingTrack && playingTrack.url === ep.url ? 'text-indigo-600' : ''">{{ ep.title }}</div><div class="text-[9px] md:text-[10px] text-slate-400 font-bold mt-1 uppercase">{{ ep.date }}</div></div>
+
+                <div class="episodes-container px-4 md:px-12 py-2 space-y-1" 
+                     :class="playingTrack ? 'pb-52 md:pb-44' : 'pb-10'">
+                    <div v-for="ep in library[activeIdx].episodes" @click="playTrack(ep)" 
+                        class="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all active:bg-slate-100 active:scale-[0.98] md:hover:bg-slate-50" 
+                        :class="playingTrack && playingTrack.url === ep.url ? 'bg-indigo-50/60 ring-1 ring-indigo-100' : ''">
+                        <img :src="ep.image" class="w-12 h-12 md:w-14 md:h-14 rounded-xl object-cover shadow-sm">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-[14px] md:text-base font-bold truncate text-slate-700" :class="playingTrack && playingTrack.url === ep.url ? 'text-indigo-600' : ''">{{ ep.title }}</div>
+                            <div class="text-[9px] md:text-[10px] text-slate-400 font-bold mt-1 uppercase">{{ ep.date }}</div>
+                        </div>
+                        <div v-if="playingTrack && playingTrack.url === ep.url" class="flex gap-0.5">
+                            <div class="w-1 h-3 bg-indigo-500 animate-[bounce_1s_infinite]"></div>
+                            <div class="w-1 h-3 bg-indigo-500 animate-[bounce_1.2s_infinite]"></div>
+                            <div class="w-1 h-3 bg-indigo-500 animate-[bounce_0.8s_infinite]"></div>
+                        </div>
                     </div>
                 </div>
             </template>
             <div v-else class="h-full flex flex-col items-center justify-center p-12 text-center">
-                <div v-if="isSyncing" class="space-y-4">
-                    <div class="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto animate-spin"><i class="fa-solid fa-rotate text-xl"></i></div>
-                    <p class="text-xs font-black text-indigo-500 uppercase tracking-widest">正在检索 /rss 目录...</p>
+                <div class="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-8">
+                    <i class="fa-solid fa-folder-open text-slate-200 text-3xl"></i>
                 </div>
-                <div v-else class="max-w-xs">
-                    <div class="w-16 h-16 bg-slate-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6"><i class="fa-solid fa-podcast text-slate-200 text-2xl"></i></div>
-                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-tight mb-2">Podcast Player</h3>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-10 leading-relaxed">配置你的 GitHub 仓库路径<br>将 RSS 文件放入 /rss 文件夹即可</p>
-                    <div class="flex flex-col gap-3">
-                         <button @click="triggerMobileSync" class="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-bold active:scale-95 transition shadow-lg shadow-indigo-100 text-xs">同步 GitHub 仓库</button>
-                         <label class="bg-slate-50 text-slate-600 px-6 py-4 rounded-2xl font-bold cursor-pointer hover:bg-slate-100 active:scale-95 transition text-xs border border-slate-100">添加本地目录 <input type="file" class="hidden" webkitdirectory @change="scanDirectory"></label>
-                    </div>
-                </div>
+                <p class="text-sm font-black text-slate-400 uppercase tracking-widest mb-10">本地目录暂无 RSS 文件</p>
+                <label class="bg-indigo-600 text-white px-10 py-5 rounded-[2rem] font-black cursor-pointer tap-feedback shadow-xl shadow-indigo-100 text-sm flex items-center gap-3">
+                    <i class="fa-solid fa-plus"></i> 选择 RSS 目录
+                    <input type="file" class="hidden" webkitdirectory @change="scanDirectory">
+                </label>
             </div>
         </main>
     </div>
 
-    <div class="drawer-overlay" :class="{ open: showMobileMenu }" @click="showMobileMenu = false; showMobileSubMenu = false"></div>
-    <div class="mobile-drawer shadow-2xl" :class="{ open: showMobileMenu }">
-        <div class="flex items-center justify-between px-6 pt-5 pb-2 flex-shrink-0 relative">
-            <span class="text-xs font-black text-slate-400 uppercase tracking-widest">我的频道</span>
-            <button @click="showMobileSubMenu = !showMobileSubMenu" class="w-9 h-9 bg-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition shadow-md">
-                <i class="fa-solid fa-plus text-sm transition-transform" :class="showMobileSubMenu ? 'rotate-45' : ''"></i>
-            </button>
-            <transition name="sub-menu">
-                <div v-if="showMobileSubMenu" class="absolute top-16 right-6 bg-white shadow-2xl rounded-2xl border border-slate-100 p-2 z-[110] w-48 overflow-hidden">
-                    <button @click="triggerMobileSync" class="w-full flex items-center gap-3 p-3 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition text-left">
-                        <i class="fa-brands fa-github text-indigo-500 w-5"></i>
-                        <span class="text-xs font-bold text-slate-600">配置云端仓库</span>
-                    </button>
-                    <label class="w-full flex items-center gap-3 p-3 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition cursor-pointer">
-                        <i class="fa-solid fa-folder-open text-amber-500 w-5"></i>
-                        <span class="text-xs font-bold text-slate-600">添加本地目录</span>
-                        <input type="file" class="hidden" webkitdirectory @change="scanDirectory(); showMobileSubMenu = false; showMobileMenu = false">
-                    </label>
+    <div class="fullscreen-overlay overflow-hidden" :class="{ 'open': isFullscreen }">
+        <div class="absolute inset-0 z-0">
+            <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover opacity-20 blur-[60px]">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/80 to-black"></div>
+        </div>
+        <div class="relative z-10 h-full flex flex-col px-8 py-8 md:px-20 md:py-12 text-white">
+            <div class="flex justify-between items-center mb-4 md:mb-12 flex-shrink-0 pt-[env(safe-area-inset-top)]">
+                <button @click="isFullscreen = false" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-chevron-down"></i></button>
+                <span class="text-[11px] font-black uppercase tracking-[0.5em] opacity-40">Now Playing</span>
+                <div class="w-12"></div>
+            </div>
+            <div class="flex-1 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-24 max-w-6xl mx-auto w-full min-h-0">
+                <div class="w-full aspect-square max-w-[320px] md:max-w-[440px] flex-shrink-0">
+                    <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover rounded-[3rem] shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/5">
                 </div>
-            </transition>
+                <div class="flex-1 flex flex-col w-full md:max-w-md text-center md:text-left min-w-0">
+                    <div class="mb-8 md:mb-12">
+                        <h2 v-if="playingTrack" class="text-2xl md:text-3xl font-black mb-3 line-clamp-2 leading-tight text-white">{{ playingTrack.title }}</h2>
+                        <p v-if="playingTrack" class="text-indigo-400 text-xs md:text-base font-bold uppercase tracking-widest opacity-90">{{ playingTrack.channelName }}</p>
+                    </div>
+                    <div class="mb-10 w-full">
+                        <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full h-1.5 mb-5" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
+                        <div class="flex justify-between text-xs font-mono font-bold opacity-40 tracking-tighter"><span>{{ formatTime(currentTime) }}</span><span>{{ formatTime(duration) }}</span></div>
+                    </div>
+                    <div class="flex flex-col items-center md:items-start gap-10">
+                        <div class="flex items-center gap-12">
+                            <button @click="skip(-15)" class="text-2xl opacity-50 hover:opacity-100 active:scale-90 transition"><i class="fa-solid fa-rotate-left"></i></button>
+                            <button @click="togglePlay" class="w-20 h-20 bg-white text-black rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition"><i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-3xl ml-1"></i></button>
+                            <button @click="skip(30)" class="text-2xl opacity-50 hover:opacity-100 active:scale-90 transition"><i class="fa-solid fa-rotate-right"></i></button>
+                        </div>
+                        <button @click="changeSpeed" class="px-8 py-3 bg-white/10 border border-white/5 rounded-full text-xs font-black hover:bg-white/20 transition text-white/90 tracking-widest">{{ playbackRate }}x SPEED</button>
+                    </div>
+                </div>
+            </div>
+            <div class="h-10 pb-[env(safe-area-inset-bottom)]"></div>
         </div>
-        <div class="px-4 pt-2 pb-8 overflow-y-auto flex-1 custom-scroll">
-            <div v-if="library.length === 0" class="p-8 text-center text-slate-300 text-[10px] font-bold uppercase tracking-widest">暂无订阅内容</div>
-            <div v-for="(podcast, idx) in library" :key="idx" @click="selectPodcast(idx); showMobileMenu = false" class="flex items-center gap-4 p-4 rounded-2xl mb-2" :class="activeIdx === idx ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50'">
-                <img :src="podcast.image" class="w-12 h-12 rounded-xl object-cover">
-                <span class="font-bold text-sm truncate flex-1">{{ podcast.name }}</span>
+    </div>
+
+    <div class="drawer-overlay" :class="{ open: showMobileMenu }" @click="showMobileMenu = false"></div>
+    <div class="mobile-drawer shadow-[0_-20px_60px_rgba(0,0,0,0.15)]" :class="{ open: showMobileMenu }">
+        <div class="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mt-4 mb-2"></div>
+        <div class="flex items-center justify-between px-7 pt-4 pb-4 flex-shrink-0">
+            <span class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">我的频道</span>
+            <label class="w-10 h-10 bg-indigo-600 text-white rounded-2xl flex items-center justify-center tap-feedback transition cursor-pointer shadow-lg shadow-indigo-100">
+                <i class="fa-solid fa-folder-plus text-sm"></i>
+                <input type="file" class="hidden" webkitdirectory @change="scanDirectory(); showMobileMenu = false">
+            </label>
+        </div>
+        <div class="px-4 pt-2 pb-12 overflow-y-auto flex-1 custom-scroll">
+            <div v-for="(podcast, idx) in library" :key="idx" @click="selectPodcast(idx); showMobileMenu = false" 
+                class="flex items-center gap-4 p-4 rounded-3xl mb-2 transition-colors active:bg-slate-100" 
+                :class="activeIdx === idx ? 'bg-indigo-50 ring-1 ring-indigo-100' : 'bg-slate-50/50'">
+                <img :src="podcast.image" class="w-14 h-14 rounded-2xl object-cover shadow-sm">
+                <div class="flex-1 min-w-0">
+                    <span class="font-black text-[15px] text-slate-800 block truncate">{{ podcast.name }}</span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">{{ podcast.episodes.length }} Episodes</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <div v-if="showMobileSyncInput" class="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
-            <div class="flex justify-between items-start mb-2">
-                <h3 class="text-lg font-black text-slate-800">GitHub 配置</h3>
-                <button v-if="githubRepo" @click="clearGithubRepo" class="text-red-400 text-[10px] font-bold bg-red-50 px-3 py-1 rounded-full uppercase">清除</button>
-            </div>
-            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6 leading-relaxed">请输入 用户名/仓库名<br>(文件需在仓库 /rss 目录下)</p>
-            <input v-model="githubRepo" type="text" placeholder="例如: xiandeshen/xiandeshen.github.io" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 mb-6">
-            <div class="flex gap-3">
-                <button @click="showMobileSyncInput = false" class="flex-1 py-4 rounded-2xl font-bold text-slate-400 text-sm">取消</button>
-                <button @click="confirmMobileSync" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-200">开始同步</button>
-            </div>
-        </div>
-    </div>
-
-    <footer v-if="playingTrack" class="player-bottom-bar fixed bottom-0 left-0 right-0 z-[60] px-5 pt-3 md:px-12 bg-white">
+    <footer v-if="playingTrack" class="player-bottom-bar fixed bottom-0 left-0 right-0 z-[60] px-5 pt-3 md:px-12">
         <div class="absolute top-0 left-0 w-full transform -translate-y-1/2 px-0 flex items-center">
             <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
         </div>
-        <div class="flex items-center justify-between gap-4 py-3">
-            <div @click="isFullscreen = true" class="flex items-center gap-3 w-1/4 md:w-1/3 min-w-0 cursor-pointer">
-                <img :src="playingTrack.image" class="w-10 h-10 md:w-14 md:h-14 rounded-lg shadow-md object-cover">
-                <div class="min-w-0 hidden md:block"><div class="text-[13px] font-black truncate text-slate-800">{{ playingTrack.title }}</div><div class="text-[10px] font-bold text-slate-400">{{ playingTrack.channelName }}</div></div>
+        <div class="flex items-center justify-between gap-4 py-2.5">
+            <div @click="isFullscreen = true" class="flex items-center gap-3 w-1/3 min-w-0 cursor-pointer tap-feedback">
+                <img :src="playingTrack.image" class="w-11 h-11 md:w-14 md:h-14 rounded-xl shadow-md object-cover border border-slate-100">
+                <div class="min-w-0">
+                    <div class="text-[13px] md:text-base font-black truncate text-slate-800">{{ playingTrack.title }}</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{{ playingTrack.channelName }}</div>
+                </div>
             </div>
-            <div class="flex items-center gap-6">
-                <button @click="skip(-15)" class="text-slate-300"><i class="fa-solid fa-rotate-left text-lg"></i></button>
-                <button @click="togglePlay" class="w-12 h-12 md:w-14 md:h-14 bg-slate-900 text-white rounded-full flex items-center justify-center active:scale-95 transition shadow-lg shadow-slate-200"><i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-lg"></i></button>
-                <button @click="skip(30)" class="text-slate-300"><i class="fa-solid fa-rotate-right text-lg"></i></button>
+            <div class="flex items-center gap-6 md:gap-8">
+                <button @click="skip(-15)" class="text-slate-300 active:text-indigo-500"><i class="fa-solid fa-rotate-left text-lg"></i></button>
+                <button @click="togglePlay" class="w-13 h-13 md:w-15 md:h-15 bg-slate-900 text-white rounded-full flex items-center justify-center tap-feedback shadow-lg"><i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-lg"></i></button>
+                <button @click="skip(30)" class="text-slate-300 active:text-indigo-500"><i class="fa-solid fa-rotate-right text-lg"></i></button>
             </div>
             <div class="flex items-center justify-end gap-4 w-1/4 md:w-1/3">
-                <div class="hidden md:flex items-center gap-3 text-[11px] font-mono font-bold text-slate-400"><span>{{ formatTime(currentTime) }}</span><span class="opacity-30">/</span><span>{{ formatTime(duration) }}</span></div>
-                <button @click="changeSpeed" class="w-10 h-10 border border-slate-100 rounded-full text-[9px] font-black text-slate-500">{{ playbackRate }}x</button>
+                <button @click="changeSpeed" class="w-10 h-10 border border-slate-200 rounded-2xl text-[10px] font-black text-slate-600 bg-slate-50 active:bg-slate-200">{{ playbackRate }}x</button>
             </div>
         </div>
     </footer>
-    
-    <div class="fullscreen-overlay overflow-hidden" :class="{ 'open': isFullscreen }">
-        <div class="absolute inset-0 z-0"><img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover opacity-30 blur-[100px]"><div class="absolute inset-0 bg-black/60"></div></div>
-        <div class="relative z-10 h-full flex flex-col px-8 py-8 md:px-20 md:py-12 text-white">
-            <div class="flex justify-between items-center mb-6 md:mb-12 flex-shrink-0">
-                <button @click="isFullscreen = false" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-chevron-down"></i></button>
-                <span class="text-[10px] font-bold uppercase tracking-[0.4em] opacity-40">正在播放</span><div class="w-10"></div>
-            </div>
-            <div class="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-24 max-w-6xl mx-auto w-full min-h-0">
-                <div class="w-56 h-56 sm:w-64 sm:h-64 md:w-[400px] md:h-[400px] flex-shrink-0">
-                    <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover rounded-[2rem] shadow-2xl border border-white/10">
-                </div>
-                <div class="flex-1 flex flex-col w-full md:max-w-md text-center md:text-left min-w-0">
-                    <div class="mb-6 md:mb-12">
-                        <h2 v-if="playingTrack" class="text-lg md:text-2xl font-black mb-2 line-clamp-2 leading-tight text-white/95">{{ playingTrack.title }}</h2>
-                        <p v-if="playingTrack" class="text-indigo-400 text-[10px] md:text-sm font-bold uppercase tracking-widest opacity-80">{{ playingTrack.channelName }}</p>
-                    </div>
-                    <div class="mb-8 w-full">
-                        <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full h-1 mb-4" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
-                        <div class="flex justify-between text-[10px] font-mono opacity-40"><span>{{ formatTime(currentTime) }}</span><span>{{ formatTime(duration) }}</span></div>
-                    </div>
-                    <div class="flex flex-col items-center md:items-start gap-8">
-                        <div class="flex items-center gap-10">
-                            <button @click="skip(-15)" class="text-xl opacity-40 hover:opacity-100 transition"><i class="fa-solid fa-rotate-left"></i></button>
-                            <button @click="togglePlay" class="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition"><i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-2xl ml-0.5"></i></button>
-                            <button @click="skip(30)" class="text-xl opacity-40 hover:opacity-100 transition"><i class="fa-solid fa-rotate-right"></i></button>
-                        </div>
-                        <button @click="changeSpeed" class="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold hover:bg-white/10 transition text-white/80">{{ playbackRate }}x 播放倍速</button>
-                    </div>
-                </div>
-            </div>
-            <div class="h-8 md:h-12 pb-[env(safe-area-inset-bottom)]"></div>
-        </div>
-    </div>
 
     <audio ref="player" v-if="playingTrack" :src="playingTrack.url" @timeupdate="onUpdate" @loadedmetadata="onLoaded" @playing="isPlaying = true" @pause="isPlaying = false"></audio>
 </div>
 
 <script>
-const { createApp, ref, watch, onMounted, nextTick } = Vue;
+const { createApp, ref, watch, nextTick } = Vue;
 createApp({
     setup() {
         const player = ref(null);
@@ -259,107 +268,59 @@ createApp({
         const isPlaying = ref(false);
         const isFullscreen = ref(false);
         const showMobileMenu = ref(false);
-        const showMobileSubMenu = ref(false);
-        const showMobileSyncInput = ref(false);
         const expandDesc = ref(false);
         const isDescOverflow = ref(false);
         const playbackRate = ref(1);
         const currentTime = ref(0);
         const duration = ref(0);
         const playingTrack = ref(null);
-        const isSyncing = ref(false);
-        const githubRepo = ref(localStorage.getItem('podcast_github_repo') || '');
 
-        const parseRSS = async (text, sourceName) => {
-            try {
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(text, "text/xml");
-                const title = xml.querySelector("channel > title")?.textContent || sourceName;
-                if (library.value.some(p => p.name === title)) return;
-                const img = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || xml.querySelector("image url")?.textContent || "https://images.unsplash.com/photo-1478737270239-2fccd27ee1f3?w=200&h=200&fit=crop";
-                const desc = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "summary")[0]?.textContent || xml.querySelector("channel > description")?.textContent || "";
-                const episodes = Array.from(xml.querySelectorAll("item")).map(item => ({
-                    title: item.querySelector("title")?.textContent,
-                    url: item.getElementsByTagName("enclosure")[0]?.getAttribute("url"),
-                    date: new Date(item.querySelector("pubDate")?.textContent).toLocaleDateString(),
-                    image: item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || img,
-                    channelName: title
-                })).filter(ep => ep.url);
-                if (episodes.length > 0) library.value.push({ name: title, image: img, description: desc, episodes });
-            } catch (e) { console.error("Parse Error", sourceName); }
-        };
-
-        const syncFromGithub = async () => {
-            let repoPath = githubRepo.value.replace(/https?:\/\/github\.com\//i, '').replace(/\/$/, '').trim();
-            if (!repoPath || !repoPath.includes('/')) return;
-            
-            isSyncing.value = true;
-            githubRepo.value = repoPath;
-            localStorage.setItem('podcast_github_repo', repoPath);
-            
-            try {
-                // 增加缓存穿透参数，确保获取最新内容
-                const apiURL = `https://api.github.com/repos/${repoPath}/contents/rss?t=${Date.now()}`;
-                const response = await fetch(apiURL);
-                if (!response.ok) throw new Error('RSS folder not found');
-                
-                const files = await response.json();
-                const rssFiles = files.filter(f => f.type === 'file' && (f.name.toLowerCase().endsWith('.rss') || f.name.toLowerCase().endsWith('.xml')));
-                
-                if (rssFiles.length === 0) { console.warn("No RSS files in folder"); }
-
-                library.value = []; 
-                for (const file of rssFiles) {
-                    const res = await fetch(file.download_url);
-                    const content = await res.text();
-                    await parseRSS(content, file.name);
-                }
-            } catch (err) { 
-                console.error("Sync Error:", err); 
-            } finally {
-                isSyncing.value = false;
-                if (library.value.length > 0) activeIdx.value = 0;
-            }
-        };
-
-        const clearGithubRepo = () => {
-            if (confirm("确定要移除当前仓库配置吗？")) {
-                githubRepo.value = '';
-                localStorage.removeItem('podcast_github_repo');
-                library.value = [];
-                activeIdx.value = -1;
-                showMobileSyncInput.value = false;
-            }
-        };
-
-        const scanDirectory = async (e) => {
-            const files = Array.from(e.target.files);
-            for (const f of files.filter(f => f.name.endsWith('.rss') || f.name.endsWith('.xml'))) {
-                await parseRSS(await f.text(), f.name);
-            }
-            if (library.value.length > 0 && activeIdx.value === -1) activeIdx.value = 0;
-        };
-
-        const triggerMobileSync = () => { showMobileSubMenu.value = false; showMobileSyncInput.value = true; };
-        const confirmMobileSync = () => { showMobileSyncInput.value = false; syncFromGithub(); };
         const checkDescOverflow = () => {
             nextTick(() => {
                 if (descContainer.value) {
                     const el = descContainer.value;
                     const clone = el.cloneNode(true);
-                    clone.style.webkitLineClamp = 'initial'; clone.style.display = 'block'; clone.style.visibility = 'hidden';
-                    clone.style.position = 'absolute'; clone.style.width = el.offsetWidth + 'px';
+                    clone.style.webkitLineClamp = 'initial';
+                    clone.style.display = 'block';
+                    clone.style.visibility = 'hidden';
+                    clone.style.position = 'absolute';
+                    clone.style.width = el.offsetWidth + 'px';
                     document.body.appendChild(clone);
-                    isDescOverflow.value = clone.scrollHeight > el.offsetHeight + 2;
+                    isDescOverflow.value = clone.scrollHeight > el.offsetHeight + 2; 
                     document.body.removeChild(clone);
                 }
             });
         };
 
         watch(activeIdx, () => { expandDesc.value = false; checkDescOverflow(); });
-        onMounted(() => { if (githubRepo.value) syncFromGithub(); });
+        watch(playingTrack, (t) => { if (t) { document.title = t.title; const f = document.getElementById('favicon'); if (f) f.href = t.image; } });
 
-        return { library, activeIdx, playingTrack, isPlaying, isFullscreen, showMobileMenu, showMobileSubMenu, showMobileSyncInput, expandDesc, isDescOverflow, playbackRate, currentTime, duration, scanDirectory, player, scrollContainer, descContainer, isSyncing, githubRepo, syncFromGithub, triggerMobileSync, confirmMobileSync, clearGithubRepo,
+        const scanDirectory = async (e) => {
+            const files = Array.from(e.target.files);
+            const rssFiles = files.filter(f => f.name.endsWith('.rss') || f.name.endsWith('.xml'));
+            const parser = new DOMParser();
+            for (const f of rssFiles) {
+                try {
+                    const text = await f.text();
+                    const xml = parser.parseFromString(text, "text/xml");
+                    const title = xml.querySelector("channel > title")?.textContent || f.name;
+                    if (library.value.some(p => p.name === title)) continue;
+                    const img = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || xml.querySelector("image url")?.textContent;
+                    const desc = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "summary")[0]?.textContent || xml.querySelector("channel > description")?.textContent || "";
+                    const episodes = Array.from(xml.querySelectorAll("item")).map(item => ({
+                        title: item.querySelector("title")?.textContent,
+                        url: item.getElementsByTagName("enclosure")[0]?.getAttribute("url"),
+                        date: new Date(item.querySelector("pubDate")?.textContent).toLocaleDateString(),
+                        image: item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || img,
+                        channelName: title
+                    })).filter(ep => ep.url);
+                    if (episodes.length > 0) library.value.push({ name: title, image: img, description: desc, episodes });
+                } catch (err) { console.error("解析失败", f.name); }
+            }
+            if (library.value.length > 0 && activeIdx.value === -1) activeIdx.value = 0;
+        };
+
+        return { library, activeIdx, playingTrack, isPlaying, isFullscreen, showMobileMenu, expandDesc, isDescOverflow, playbackRate, currentTime, duration, scanDirectory, player, scrollContainer, descContainer,
             selectPodcast: (idx) => { activeIdx.value = idx; if (scrollContainer.value) scrollContainer.value.scrollTop = 0; },
             playTrack: (ep) => { playingTrack.value = ep; setTimeout(() => { if (player.value) { player.value.load(); player.value.play(); } }, 50); },
             formatTime: (s) => { if (isNaN(s)) return '0:00'; const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), rs = Math.floor(s%60); return h>0 ? `${h}:${m.toString().padStart(2,'0')}:${rs.toString().padStart(2,'0')}` : `${m}:${rs.toString().padStart(2,'0')}`; },
