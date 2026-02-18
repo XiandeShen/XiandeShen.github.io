@@ -49,6 +49,10 @@
             animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .line-clamp-3 {
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-white text-slate-900 h-screen overflow-hidden antialiased select-none">
@@ -108,7 +112,21 @@
                             <p class="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">{{ library[activeIdx].episodes.length }} Episodes</p>
                         </div>
                     </div>
+                    
+                    <div v-if="library[activeIdx].description" 
+                         class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50 cursor-pointer transition-all hover:bg-slate-50"
+                         @click="expandDesc = !expandDesc">
+                        <div class="text-slate-500 text-xs leading-relaxed font-medium"
+                             :class="expandDesc ? '' : 'line-clamp-3'">
+                            {{ library[activeIdx].description }}
+                        </div>
+                        <div class="text-[10px] font-bold text-indigo-500 mt-2 flex items-center gap-1 uppercase tracking-tighter">
+                            {{ expandDesc ? '收起详情' : '展开详情' }}
+                            <i class="fa-solid" :class="expandDesc ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </div>
+                    </div>
                 </div>
+
                 <div class="px-4 md:px-12 py-2 space-y-0.5 pb-40">
                     <div v-for="ep in library[activeIdx].episodes" @click="playTrack(ep)"
                          class="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all active:bg-slate-100 md:hover:bg-slate-50"
@@ -139,7 +157,7 @@
         </div>
         <div class="overflow-y-auto px-4 pb-12 pt-2 space-y-2 flex-1 custom-scroll">
             <div v-for="(podcast, idx) in library" :key="idx" @click="selectPodcast(idx); showMobileMenu = false"
-                 class="flex items-center gap-4 p-4 rounded-2xl transition-all" :class="activeIdx === idx ? 'bg-indigo-600 text-white' : 'bg-slate-50'">
+                 class="flex items-center gap-4 p-4 rounded-2xl transition-all" :class="activeIdx === idx ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-50'">
                 <img :src="podcast.image" class="w-12 h-12 rounded-xl object-cover"><span class="font-bold text-sm truncate">{{ podcast.name }}</span>
             </div>
         </div>
@@ -192,25 +210,26 @@ createApp({
         const activeIdx = ref(-1);
         const isPlaying = ref(false);
         const showMobileMenu = ref(false);
+        const expandDesc = ref(false); // 恢复折叠状态控制
         const playbackRate = ref(1);
         const currentTime = ref(0);
         const duration = ref(0);
         const playingTrack = ref(null);
 
-        // --- 核心功能模块：更新浏览器标签标题和 Favicon ---
         const updateFavicon = (url) => {
             const link = document.getElementById('favicon');
             if (link) link.href = url || "data:image/svg+xml,...";
         };
 
-        // 监听播放曲目的变化，同步更新标签页信息
         watch(playingTrack, (newTrack) => {
             if (newTrack) {
                 document.title = `${newTrack.title} - ${newTrack.channelName}`;
                 updateFavicon(newTrack.image);
             }
         });
-        // ----------------------------------------------
+
+        // 切换节目时重置简介状态
+        watch(activeIdx, () => { expandDesc.value = false; });
 
         const scanDirectory = async (event) => {
             const files = Array.from(event.target.files);
@@ -223,11 +242,12 @@ createApp({
                     const xml = parser.parseFromString(text, "text/xml");
                     const channelTitle = xml.querySelector("channel > title")?.textContent || file.name;
                     
-                    // 去重检查
-                    const isDuplicate = library.value.some(p => p.name === channelTitle);
-                    if (isDuplicate) continue; 
+                    if (library.value.some(p => p.name === channelTitle)) continue; 
 
                     const channelImg = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || xml.querySelector("image url")?.textContent;
+                    // 恢复简介内容解析
+                    const channelDesc = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "summary")[0]?.textContent || xml.querySelector("channel > description")?.textContent || "";
+
                     const episodes = Array.from(xml.querySelectorAll("item")).map(item => ({
                         title: item.querySelector("title")?.textContent,
                         url: item.getElementsByTagName("enclosure")[0]?.getAttribute("url"),
@@ -237,7 +257,7 @@ createApp({
                     })).filter(e => e.url);
                     
                     if (episodes.length > 0) {
-                        library.value.push({ name: channelTitle, image: channelImg, episodes });
+                        library.value.push({ name: channelTitle, image: channelImg, description: channelDesc, episodes });
                     }
                 } catch (e) { console.error("解析失败:", file.name); }
             }
@@ -252,7 +272,7 @@ createApp({
             return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${rs.toString().padStart(2, '0')}` : `${m}:${rs.toString().padStart(2, '0')}`;
         };
 
-        return { library, activeIdx, playingTrack, isPlaying, showMobileMenu, playbackRate, currentTime, duration, scanDirectory, selectPodcast, playTrack, formatTime, player, scrollContainer,
+        return { library, activeIdx, playingTrack, isPlaying, showMobileMenu, expandDesc, playbackRate, currentTime, duration, scanDirectory, selectPodcast, playTrack, formatTime, player, scrollContainer,
             togglePlay: () => isPlaying.value ? player.value.pause() : player.value.play(),
             skip: (s) => player.value.currentTime += s,
             seek: (e) => player.value.currentTime = e.target.value,
