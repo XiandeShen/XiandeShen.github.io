@@ -130,12 +130,13 @@
                     </div>
                 </div>
 
-                <div class="px-4 md:px-12 py-2 space-y-0.5 pb-20">
+                <div class="px-4 md:px-12 py-2 space-y-0.5">
                     <div v-for="ep in library[activeIdx].episodes" @click="playTrack(ep)" class="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all active:bg-slate-100 md:hover:bg-slate-50" :class="playingTrack && playingTrack.url === ep.url ? 'bg-indigo-50/50' : ''">
                         <img :src="ep.image" class="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover shadow-sm">
                         <div class="flex-1 min-w-0"><div class="text-[13px] md:text-sm font-bold truncate text-slate-700" :class="playingTrack && playingTrack.url === ep.url ? 'text-indigo-600' : ''">{{ ep.title }}</div><div class="text-[9px] md:text-[10px] text-slate-400 font-bold mt-1 uppercase">{{ ep.date }}</div></div>
                     </div>
-                    <div class="py-20 flex flex-col items-center justify-center opacity-20">
+                    
+                    <div class="mt-12 mb-32 md:mb-40 flex flex-col items-center justify-center opacity-20">
                         <div class="w-8 h-[1px] bg-slate-900 mb-4"></div>
                         <span class="text-[10px] font-bold tracking-[0.2em] uppercase">已显示全部内容</span>
                     </div>
