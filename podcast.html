@@ -15,16 +15,30 @@
         [v-cloak] { display: none; }
         input[type="range"] {
             -webkit-appearance: none; width: 100%; height: 4px;
-            background: #f1f5f9; border-radius: 2px;
+            background: rgba(255,255,255,0.2); border-radius: 2px;
             background-repeat: no-repeat; outline: none; cursor: pointer;
+            background-image: linear-gradient(#fff, #fff);
+        }
+        /* 默认播放栏进度条颜色 */
+        .player-bottom-bar input[type="range"] {
+            background: #f1f5f9;
             background-image: linear-gradient(#6366f1, #6366f1);
         }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none; height: 16px; width: 16px;
-            border-radius: 50%; background: #6366f1; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
         .custom-scroll::-webkit-scrollbar { width: 0px; display: none; }
         
+        /* 全屏过渡动画 */
+        .fullscreen-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: #000;
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+        .fullscreen-overlay.open { transform: translateY(0); }
+
         .mobile-drawer {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: white; z-index: 100;
@@ -45,7 +59,6 @@
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
             box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.06);
-            /* 适配移动端底部安全区 */
             padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
             animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -157,6 +170,55 @@
         </main>
     </div>
 
+    <div class="fullscreen-overlay overflow-hidden" :class="{ 'open': isFullscreen }">
+        <div class="absolute inset-0 z-0">
+            <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover opacity-40 scale-110 blur-[80px]">
+            <div class="absolute inset-0 bg-black/40"></div>
+        </div>
+
+        <div class="relative z-10 h-full flex flex-col p-8 md:p-16 text-white">
+            <div class="flex justify-between items-center mb-8">
+                <button @click="isFullscreen = false" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition">
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <span class="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">正在播放</span>
+                <div class="w-10"></div>
+            </div>
+
+            <div class="flex-1 flex flex-col md:flex-row items-center justify-center gap-10 md:gap-20 max-w-6xl mx-auto w-full">
+                <div class="w-64 h-64 md:w-[400px] md:h-[400px] flex-shrink-0">
+                    <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+                </div>
+
+                <div class="flex-1 flex flex-col w-full md:w-auto">
+                    <div class="mb-8 text-center md:text-left">
+                        <h2 v-if="playingTrack" class="text-2xl md:text-5xl font-black mb-3 line-clamp-2 leading-tight">{{ playingTrack.title }}</h2>
+                        <p v-if="playingTrack" class="text-indigo-300 md:text-xl font-bold opacity-80 uppercase tracking-wide">{{ playingTrack.channelName }}</p>
+                    </div>
+
+                    <div class="mb-8">
+                        <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full h-2 mb-3" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
+                        <div class="flex justify-between text-[11px] font-mono font-bold opacity-50">
+                            <span>{{ formatTime(currentTime) }}</span>
+                            <span>{{ formatTime(duration) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-center md:items-start gap-10">
+                        <div class="flex items-center gap-10 md:gap-14">
+                            <button @click="skip(-15)" class="text-2xl md:text-3xl opacity-60 hover:opacity-100 transition"><i class="fa-solid fa-rotate-left"></i></button>
+                            <button @click="togglePlay" class="w-20 h-20 md:w-24 md:h-24 bg-white text-black rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition">
+                                <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-3xl md:text-4xl ml-1"></i>
+                            </button>
+                            <button @click="skip(30)" class="text-2xl md:text-3xl opacity-60 hover:opacity-100 transition"><i class="fa-solid fa-rotate-right"></i></button>
+                        </div>
+                        <button @click="changeSpeed" class="px-6 py-2 border border-white/20 rounded-full text-xs font-black hover:bg-white/10 transition">{{ playbackRate }}x 播放倍速</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="drawer-overlay" :class="{ open: showMobileMenu }" @click="showMobileMenu = false"></div>
     <div class="mobile-drawer shadow-2xl" :class="{ open: showMobileMenu }">
         <div class="w-12 h-1.5 bg-slate-100 rounded-full mx-auto my-4"></div>
@@ -179,8 +241,8 @@
         </div>
 
         <div class="flex items-center justify-between gap-4 py-3">
-            <div class="flex items-center gap-3 w-1/4 md:w-1/3 min-w-0">
-                <img :src="playingTrack.image" class="w-10 h-10 md:w-14 md:h-14 rounded-lg shadow-md object-cover flex-shrink-0">
+            <div @click="isFullscreen = true" class="flex items-center gap-3 w-1/4 md:w-1/3 min-w-0 cursor-pointer group">
+                <img :src="playingTrack.image" class="w-10 h-10 md:w-14 md:h-14 rounded-lg shadow-md object-cover flex-shrink-0 group-hover:brightness-75 transition">
                 <div class="min-w-0 hidden md:block">
                     <div class="text-[13px] font-black truncate text-slate-800 tracking-tight">{{ playingTrack.title }}</div>
                     <div class="text-[10px] font-bold text-slate-400 truncate mt-0.5">{{ playingTrack.channelName }}</div>
@@ -206,7 +268,7 @@
         </div>
     </footer>
 
-    <audio ref="player" v-if="playingTrack" :src="playingTrack.url" @timeupdate="onUpdate" @loadedmetadata="onLoaded" @playing="isPlaying = true" @pause="isPlaying = false"></audio>
+    <audio ref="player" v-if="playingTrack" :src="playingTrack.url" @timeupdate="onUpdate" @loadedmetadata="onLoaded" @playing="isPlaying = true" @pause="isPlaying = false"></event>
 </div>
 
 <script>
@@ -218,6 +280,7 @@ createApp({
         const library = ref([]);
         const activeIdx = ref(-1);
         const isPlaying = ref(false);
+        const isFullscreen = ref(false); // 全屏状态控制
         const showMobileMenu = ref(false);
         const expandDesc = ref(false);
         const playbackRate = ref(1);
@@ -274,7 +337,7 @@ createApp({
             return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${rs.toString().padStart(2, '0')}` : `${m}:${rs.toString().padStart(2, '0')}`;
         };
 
-        return { library, activeIdx, playingTrack, isPlaying, showMobileMenu, expandDesc, playbackRate, currentTime, duration, scanDirectory, selectPodcast, playTrack, formatTime, player, scrollContainer,
+        return { library, activeIdx, playingTrack, isPlaying, isFullscreen, showMobileMenu, expandDesc, playbackRate, currentTime, duration, scanDirectory, selectPodcast, playTrack, formatTime, player, scrollContainer,
             togglePlay: () => isPlaying.value ? player.value.pause() : player.value.play(),
             skip: (s) => player.value.currentTime += s,
             seek: (e) => player.value.currentTime = e.target.value,
