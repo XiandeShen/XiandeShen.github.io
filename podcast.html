@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="referrer" content="no-referrer">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Podcast</title>
+    <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23818cf8;stop-opacity:1'/><stop offset='100%25' style='stop-color:%234f46e5;stop-opacity:1'/></linearGradient></defs><rect width='100' height='100' rx='28' fill='url(%23g)'/><path d='M30 50v-10M40 50v-20M50 50v-30M60 50v-20M70 50v-10' stroke='white' stroke-width='8' stroke-linecap='round'/><circle cx='50' cy='70' r='8' fill='white'/></svg>">
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        [v-cloak] { display: none; }
+        
+        /* audio css 标准进度条样式 */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%; height: 4px;
+            background: #f1f5f9; border-radius: 2px;
+            background-image: linear-gradient(#6366f1, #6366f1);
+            background-repeat: no-repeat; outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px;
+            border-radius: 50%; background: #6366f1;
+            border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 0px; display: none; }
+        
+        .player-bottom-bar {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.06);
+            padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+        }
+
+        .mobile-drawer {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; z-index: 100;
+            border-top-left-radius: 2rem; border-top-right-radius: 2rem;
+            transform: translateY(105%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 70vh; display: flex; flex-direction: column;
+        }
+        .mobile-drawer.open { transform: translateY(0); }
+        .drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px); z-index: 90;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+    </style>
+</head>
+<body class="bg-white text-slate-900 h-screen overflow-hidden antialiased select-none">
+
+<div id="app" v-cloak class="flex flex-col h-full relative">
+    
+    <header class="flex items-center justify-between px-6 py-4 md:hidden border-b border-slate-50 bg-white/80 backdrop-blur-md sticky top-0 z-30">
+        <h1 class="text-xl font-black tracking-tighter">Podcast</h1>
+        <button @click="showMobileMenu = true" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center active:scale-90 transition">
+            <i class="fa-solid fa-list-ul"></i>
+        </button>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <aside class="hidden md:flex flex-col w-72 border-r bg-slate-50/30 flex-shrink-0">
+            <div class="p-8">
+                <h2 class="text-2xl font-black mb-6 tracking-tighter text-slate-800">Podcast</h2>
+                <label class="flex items-center justify-center gap-2 w-full bg-indigo-600 text-white py-3 rounded-2xl font-bold cursor-pointer hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 text-xs">
+                    <i class="fa-solid fa-folder-open"></i> 扫描 RSS 目录
+                    <input type="file" class="hidden" webkitdirectory @change="scanDirectory">
+                </label>
+            </div>
+            <nav class="flex-1 overflow-y-auto px-4 space-y-1 pb-10 custom-scroll">
+                <div v-for="(podcast, idx) in library" :key="idx" @click="selectPodcast(idx)"
+                     class="p-3 rounded-2xl cursor-pointer transition flex items-center gap-4"
+                     :class="activeIdx === idx ? 'bg-white shadow-sm ring-1 ring-slate-200' : 'hover:bg-slate-100/80 text-slate-500'">
+                    <img :src="podcast.image" class="w-10 h-10 rounded-xl object-cover bg-gray-100">
+                    <span class="text-xs font-extrabold truncate">{{ podcast.name }}</span>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="flex-1 flex flex-col overflow-hidden bg-white">
+            <template v-if="activeIdx !== -1 && library.length > 0">
+                <div class="p-6 md:px-12 md:pt-12 md:pb-8 flex flex-row items-center md:items-end gap-5 md:gap-8 bg-gradient-to-b from-slate-50/50 to-white">
+                    <img :src="library[activeIdx].image" class="w-20 h-20 md:w-44 md:h-44 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl object-cover border-2 md:border-4 border-white">
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-lg md:text-4xl font-black tracking-tight text-slate-800 truncate">{{ library[activeIdx].name }}</h2>
+                        <p class="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">{{ library[activeIdx].episodes.length }} Episodes</p>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-4 md:px-12 py-2 space-y-0.5 pb-40 custom-scroll">
+                    <div v-for="ep in library[activeIdx].episodes" @click="playTrack(ep)"
+                         class="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all active:bg-slate-100 md:hover:bg-slate-50"
+                         :class="playingTrack.url === ep.url ? 'bg-indigo-50/50' : ''">
+                        <img :src="ep.image" class="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl object-cover shadow-sm">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-[13px] md:text-sm font-bold truncate leading-snug" :class="playingTrack.url === ep.url ? 'text-indigo-600' : 'text-slate-700'">{{ ep.title }}</div>
+                            <div class="text-[9px] md:text-[10px] text-slate-400 font-bold mt-1 uppercase opacity-70">{{ ep.date }}</div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            
+            <div v-else class="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                <div class="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-6">
+                    <i class="fa-solid fa-microphone-lines text-3xl text-slate-200"></i>
+                </div>
+                <p class="text-sm font-black text-slate-300 uppercase tracking-widest leading-loose">
+                    请扫描本地 RSS 目录开始<br>
+                    <span class="text-[10px] font-medium text-slate-300">Modern Podcast Layout</span>
+                </p>
+                <label class="md:hidden mt-8 bg-indigo-600 text-white px-10 py-3 rounded-2xl font-bold text-sm shadow-xl shadow-indigo-100">
+                    开始扫描 <input type="file" class="hidden" webkitdirectory @change="scanDirectory">
+                </label>
+            </div>
+        </main>
+    </div>
+
+    <div class="drawer-overlay" :class="{ open: showMobileMenu }" @click="showMobileMenu = false"></div>
+    <div class="mobile-drawer shadow-2xl" :class="{ open: showMobileMenu }">
+        <div class="w-12 h-1.5 bg-slate-100 rounded-full mx-auto my-4"></div>
+        <div class="px-6 py-2 mb-2 flex items-center justify-between">
+            <h3 class="text-lg font-black text-slate-800">我的节目库</h3>
+            <label class="text-indigo-600 font-bold text-xs bg-indigo-50 px-3 py-1.5 rounded-full">
+                添加目录 <input type="file" class="hidden" webkitdirectory @change="scanDirectory">
+            </label>
+        </div>
+        <div class="overflow-y-auto px-4 pb-12 space-y-2 flex-1 custom-scroll">
+            <div v-for="(podcast, idx) in library" :key="idx" 
+                 @click="selectPodcast(idx); showMobileMenu = false"
+                 class="flex items-center gap-4 p-4 rounded-2xl"
+                 :class="activeIdx === idx ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-50'">
+                <img :src="podcast.image" class="w-12 h-12 rounded-xl object-cover">
+                <span class="font-bold text-sm truncate">{{ podcast.name }}</span>
+            </div>
+        </div>
+    </div>
+
+    <footer v-if="playingTrack.url" class="player-bottom-bar fixed bottom-0 left-0 right-0 z-40 px-5 pt-3 md:px-12">
+        <div class="absolute top-0 left-0 w-full transform -translate-y-1/2 px-0 flex items-center">
+            <span class="absolute left-4 -top-6 text-[10px] font-mono font-bold text-indigo-500 bg-white px-2 py-0.5 rounded-full shadow-sm md:hidden">
+                {{ formatTime(currentTime) }}
+            </span>
+            <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full"
+                   :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
+        </div>
+
+        <div class="flex items-center justify-between gap-4 py-3">
+            <div class="flex items-center gap-3 w-1/4 md:w-1/3 min-w-0">
+                <img :src="playingTrack.image" class="w-10 h-10 md:w-14 md:h-14 rounded-lg shadow-md object-cover flex-shrink-0">
+                <div class="min-w-0 hidden md:block">
+                    <div class="text-[13px] font-black truncate text-slate-800 tracking-tight">{{ playingTrack.title }}</div>
+                    <div class="text-[10px] font-bold text-slate-400 truncate uppercase mt-0.5">{{ library[activeIdx]?.name }}</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center gap-1">
+                <div class="flex items-center gap-6 md:gap-10">
+                    <button @click="skip(-15)" class="text-slate-300 hover:text-indigo-600 transition-colors"><i class="fa-solid fa-rotate-left text-lg md:text-xl"></i></button>
+                    <button @click="togglePlay" class="w-12 h-12 md:w-14 md:h-14 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-xl active:scale-90 transition">
+                        <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-lg md:text-xl ml-0.5"></i>
+                    </button>
+                    <button @click="skip(30)" class="text-slate-300 hover:text-indigo-600 transition-colors"><i class="fa-solid fa-rotate-right text-lg md:text-xl"></i></button>
+                </div>
+                <div class="hidden md:flex items-center gap-3 text-[10px] font-mono font-bold text-slate-400 mt-1">
+                    <span>{{ formatTime(currentTime) }}</span>
+                    <span class="opacity-30">/</span>
+                    <span>{{ formatTime(duration) }}</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 w-1/4 md:w-1/3">
+                <span class="md:hidden text-[10px] font-mono font-bold text-slate-400 mr-1">{{ formatTime(duration) }}</span>
+                <button @click="changeSpeed" class="w-9 h-9 border border-slate-100 rounded-full text-[9px] font-black text-slate-500 hover:bg-slate-50 transition uppercase tracking-tighter">{{ playbackRate }}x</button>
+            </div>
+        </div>
+    </footer>
+
+    <audio ref="player" :src="playingTrack.url" @timeupdate="onUpdate" @loadedmetadata="onLoaded" 
+           @playing="isPlaying = true" @pause="isPlaying = false" @ended="isPlaying = false"></audio>
+</div>
+
+<script>
+const { createApp, ref, watch } = Vue;
+
+createApp({
+    setup() {
+        const player = ref(null);
+        const library = ref([]);
+        const activeIdx = ref(-1);
+        const isPlaying = ref(false);
+        const showMobileMenu = ref(false);
+        const playbackRate = ref(1);
+        const currentTime = ref(0);
+        const duration = ref(0);
+        const playingTrack = ref({ title: '', url: '', image: '', date: '' });
+
+        // 核心功能 1：动态修改标签页标题
+        watch([activeIdx, playingTrack], () => {
+            if (playingTrack.value.title) {
+                document.title = `${playingTrack.value.title} - ${library.value[activeIdx.value]?.name || 'Podcast'}`;
+            } else if (activeIdx.value !== -1) {
+                document.title = library.value[activeIdx.value].name;
+            } else {
+                document.title = "Podcast";
+            }
+        }, { deep: true });
+
+        const scanDirectory = async (event) => {
+            const files = Array.from(event.target.files);
+            const rssFiles = files.filter(f => f.name.endsWith('.rss') || f.name.endsWith('.xml'));
+            const parser = new DOMParser();
+            
+            for (const file of rssFiles) {
+                const text = await file.text();
+                const xml = parser.parseFromString(text, "text/xml");
+                const channelTitle = xml.querySelector("channel > title")?.textContent || file.name;
+                const channelImg = xml.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || xml.querySelector("image url")?.textContent;
+                
+                const episodes = Array.from(xml.querySelectorAll("item")).map(item => ({
+                    title: item.querySelector("title")?.textContent,
+                    url: item.getElementsByTagName("enclosure")[0]?.getAttribute("url"),
+                    date: new Date(item.querySelector("pubDate")?.textContent).toLocaleDateString(),
+                    image: item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || channelImg
+                })).filter(e => e.url);
+
+                if (episodes.length > 0) {
+                    library.value.push({ name: channelTitle, image: channelImg, episodes });
+                }
+            }
+            if (library.value.length > 0 && activeIdx.value === -1) selectPodcast(0);
+        };
+
+        const selectPodcast = (idx) => {
+            activeIdx.value = idx;
+            if (library.value[idx].episodes.length > 0) {
+                playingTrack.value = library.value[idx].episodes[0];
+            }
+        };
+
+        const playTrack = (ep, auto = true) => {
+            playingTrack.value = ep;
+            setTimeout(() => {
+                player.value.load();
+                if (auto) player.value.play();
+            }, 50);
+        };
+
+        const togglePlay = () => isPlaying.value ? player.value.pause() : player.value.play();
+        const skip = (s) => player.value.currentTime += s;
+        const seek = (e) => player.value.currentTime = e.target.value;
+        const changeSpeed = () => {
+            const rates = [1, 1.25, 1.5, 2];
+            playbackRate.value = rates[(rates.indexOf(playbackRate.value) + 1) % rates.length];
+            player.value.playbackRate = playbackRate.value;
+        };
+
+        // 核心功能 2：格式化时间显示
+        const formatTime = (s) => {
+            if (isNaN(s)) return '0:00';
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const rs = Math.floor(s % 60);
+            const mm = m.toString().padStart(2, '0');
+            const ss = rs.toString().padStart(2, '0');
+            return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+        };
+
+        const onUpdate = () => currentTime.value = player.value.currentTime;
+        const onLoaded = () => duration.value = player.value.duration;
+
+        return { library, activeIdx, playingTrack, isPlaying, showMobileMenu, playbackRate, currentTime, duration, scanDirectory, selectPodcast, playTrack, togglePlay, skip, seek, changeSpeed, onUpdate, onLoaded, formatTime, player };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
