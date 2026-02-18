@@ -130,10 +130,14 @@
                     </div>
                 </div>
 
-                <div class="px-4 md:px-12 py-2 space-y-0.5" :class="library.length > 0 ? 'pb-44 md:pb-48' : 'pb-8'">
+                <div class="px-4 md:px-12 py-2 space-y-0.5 pb-20">
                     <div v-for="ep in library[activeIdx].episodes" @click="playTrack(ep)" class="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all active:bg-slate-100 md:hover:bg-slate-50" :class="playingTrack && playingTrack.url === ep.url ? 'bg-indigo-50/50' : ''">
                         <img :src="ep.image" class="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover shadow-sm">
                         <div class="flex-1 min-w-0"><div class="text-[13px] md:text-sm font-bold truncate text-slate-700" :class="playingTrack && playingTrack.url === ep.url ? 'text-indigo-600' : ''">{{ ep.title }}</div><div class="text-[9px] md:text-[10px] text-slate-400 font-bold mt-1 uppercase">{{ ep.date }}</div></div>
+                    </div>
+                    <div class="py-20 flex flex-col items-center justify-center opacity-20">
+                        <div class="w-8 h-[1px] bg-slate-900 mb-4"></div>
+                        <span class="text-[10px] font-bold tracking-[0.2em] uppercase">已显示全部内容</span>
                     </div>
                 </div>
             </template>
@@ -144,9 +148,9 @@
         </main>
     </div>
 
-    <div v-if="playingTrack" class="fullscreen-overlay overflow-hidden" :class="{ 'open': isFullscreen }">
+    <div class="fullscreen-overlay overflow-hidden" :class="{ 'open': isFullscreen }">
         <div class="absolute inset-0 z-0">
-            <img :src="playingTrack.image" class="w-full h-full object-cover opacity-30 blur-[100px]">
+            <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover opacity-30 blur-[100px]">
             <div class="absolute inset-0 bg-black/60"></div>
         </div>
         <div class="relative z-10 h-full flex flex-col px-8 py-8 md:px-20 md:py-12 text-white">
@@ -157,12 +161,12 @@
             </div>
             <div class="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-24 max-w-6xl mx-auto w-full min-h-0">
                 <div class="w-56 h-56 sm:w-64 sm:h-64 md:w-[400px] md:h-[400px] flex-shrink-0">
-                    <img :src="playingTrack.image" class="w-full h-full object-cover rounded-[2rem] shadow-2xl border border-white/10">
+                    <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover rounded-[2rem] shadow-2xl border border-white/10">
                 </div>
                 <div class="flex-1 flex flex-col w-full md:max-w-md text-center md:text-left min-w-0">
                     <div class="mb-6 md:mb-12">
-                        <h2 class="text-lg md:text-2xl font-black mb-2 line-clamp-2 leading-tight text-white/95">{{ playingTrack.title }}</h2>
-                        <p class="text-indigo-400 text-[10px] md:sm font-bold uppercase tracking-widest opacity-80">{{ playingTrack.channelName }}</p>
+                        <h2 v-if="playingTrack" class="text-lg md:text-2xl font-black mb-2 line-clamp-2 leading-tight text-white/95">{{ playingTrack.title }}</h2>
+                        <p v-if="playingTrack" class="text-indigo-400 text-[10px] md:text-sm font-bold uppercase tracking-widest opacity-80">{{ playingTrack.channelName }}</p>
                     </div>
                     <div class="mb-8 w-full">
                         <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full h-1 mb-4" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
@@ -201,41 +205,26 @@
         <div class="h-[env(safe-area-inset-bottom)]"></div>
     </div>
 
-    <footer v-if="library.length > 0" class="player-bottom-bar fixed bottom-0 left-0 right-0 z-[60] px-5 pt-3 md:px-12 bg-white">
-        <div v-if="playingTrack" class="absolute top-0 left-0 w-full transform -translate-y-1/2 px-0 flex items-center">
+    <footer v-if="playingTrack" class="player-bottom-bar fixed bottom-0 left-0 right-0 z-[60] px-5 pt-3 md:px-12 bg-white">
+        <div class="absolute top-0 left-0 w-full transform -translate-y-1/2 px-0 flex items-center">
             <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
         </div>
-        
         <div class="flex items-center justify-between gap-4 py-3">
-            <div @click="playingTrack ? isFullscreen = true : null" class="flex items-center gap-3 w-1/4 md:w-1/3 min-w-0 cursor-pointer">
-                <template v-if="playingTrack">
-                    <img :src="playingTrack.image" class="w-10 h-10 md:w-14 md:h-14 rounded-lg shadow-md object-cover">
-                    <div class="min-w-0 hidden md:block">
-                        <div class="text-[13px] font-black truncate text-slate-800">{{ playingTrack.title }}</div>
-                        <div class="text-[10px] font-bold text-slate-400">{{ playingTrack.channelName }}</div>
-                    </div>
-                </template>
-                <template v-else>
-                    <div class="w-10 h-10 md:w-14 md:h-14 rounded-lg bg-slate-50 flex items-center justify-center text-slate-200">
-                        <i class="fa-solid fa-music"></i>
-                    </div>
-                    <div class="min-w-0 hidden md:block">
-                        <div class="text-[13px] font-black text-slate-300">请选择节目开始播放</div>
-                    </div>
-                </template>
+            <div @click="isFullscreen = true" class="flex items-center gap-3 w-1/4 md:w-1/3 min-w-0 cursor-pointer">
+                <img :src="playingTrack.image" class="w-10 h-10 md:w-14 md:h-14 rounded-lg shadow-md object-cover">
+                <div class="min-w-0 hidden md:block">
+                    <div class="text-[13px] font-black truncate text-slate-800">{{ playingTrack.title }}</div>
+                    <div class="text-[10px] font-bold text-slate-400">{{ playingTrack.channelName }}</div>
+                </div>
             </div>
-
             <div class="flex items-center gap-6">
                 <button @click="skip(-15)" class="text-slate-300"><i class="fa-solid fa-rotate-left text-lg"></i></button>
                 <button @click="togglePlay" class="w-12 h-12 md:w-14 md:h-14 bg-slate-900 text-white rounded-full flex items-center justify-center active:scale-95 transition"><i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-lg"></i></button>
                 <button @click="skip(30)" class="text-slate-300"><i class="fa-solid fa-rotate-right text-lg"></i></button>
             </div>
-            
             <div class="flex items-center justify-end gap-4 w-1/4 md:w-1/3">
-                <template v-if="playingTrack">
-                    <div class="hidden md:flex items-center gap-3 text-[11px] font-mono font-bold text-slate-400"><span>{{ formatTime(currentTime) }}</span><span class="opacity-30">/</span><span>{{ formatTime(duration) }}</span></div>
-                    <button @click="changeSpeed" class="w-10 h-10 border border-slate-100 rounded-full text-[9px] font-black text-slate-500">{{ playbackRate }}x</button>
-                </template>
+                <div class="hidden md:flex items-center gap-3 text-[11px] font-mono font-bold text-slate-400"><span>{{ formatTime(currentTime) }}</span><span class="opacity-30">/</span><span>{{ formatTime(duration) }}</span></div>
+                <button @click="changeSpeed" class="w-10 h-10 border border-slate-100 rounded-full text-[9px] font-black text-slate-500">{{ playbackRate }}x</button>
             </div>
         </div>
     </footer>
