@@ -29,7 +29,6 @@
         }
         .custom-scroll::-webkit-scrollbar { width: 0px; display: none; }
         
-        /* Layout & Overlays */
         .fullscreen-overlay {
             position: fixed; inset: 0; z-index: 200;
             background: #000; transform: translateY(100%);
@@ -62,7 +61,6 @@
         }
         .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         
-        /* Sub-menu animation */
         .sub-menu-enter-active, .sub-menu-leave-active { transition: all 0.2s ease-out; }
         .sub-menu-enter-from, .sub-menu-leave-to { opacity: 0; transform: translateY(10px) scale(0.95); }
     </style>
@@ -86,9 +84,14 @@
             <div class="flex items-center bg-slate-100/60 border border-slate-100 rounded-xl px-3 py-1.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                 <i class="fa-brands fa-github text-slate-400 mr-2 text-xs"></i>
                 <input v-model="githubRepo" @keyup.enter="syncFromGithub" type="text" placeholder="User/Repo" class="bg-transparent text-[10px] font-bold outline-none w-32 text-slate-600 placeholder:text-slate-300">
-                <button @click="syncFromGithub" class="ml-2 text-indigo-500 hover:scale-110 transition">
-                    <i class="fa-solid" :class="isSyncing ? 'fa-rotate animate-spin' : 'fa-arrow-rotate-right'"></i>
-                </button>
+                <div class="flex items-center gap-2 ml-2">
+                    <button v-if="githubRepo" @click="clearGithubRepo" class="text-slate-300 hover:text-red-400 transition" title="移除仓库">
+                        <i class="fa-solid fa-circle-xmark text-[10px]"></i>
+                    </button>
+                    <button @click="syncFromGithub" class="text-indigo-500 hover:scale-110 transition">
+                        <i class="fa-solid" :class="isSyncing ? 'fa-rotate animate-spin' : 'fa-arrow-rotate-right'"></i>
+                    </button>
+                </div>
             </div>
             <label class="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl font-bold cursor-pointer transition text-xs border border-slate-100">
                 <i class="fa-solid fa-plus text-indigo-500"></i> 本地目录
@@ -153,14 +156,14 @@
                     <div class="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto animate-spin">
                         <i class="fa-solid fa-rotate text-xl"></i>
                     </div>
-                    <p class="text-xs font-black text-indigo-500 uppercase tracking-widest">正在同步 GitHub 仓库...</p>
+                    <p class="text-xs font-black text-indigo-500 uppercase tracking-widest">正在同步云端内容...</p>
                 </div>
                 <div v-else class="max-w-xs">
                     <div class="w-16 h-16 bg-slate-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
-                         <i class="fa-solid fa-cloud-arrow-down text-slate-200 text-2xl"></i>
+                         <i class="fa-solid fa-podcast text-slate-200 text-2xl"></i>
                     </div>
-                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-tight mb-2">欢迎使用 Podcast</h3>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-10 leading-relaxed">配置 GitHub 仓库实现云端同步<br>或者直接添加本地 RSS 目录</p>
+                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-tight mb-2">Podcast Player</h3>
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-10 leading-relaxed">未配置内容仓库<br>输入有效路径后将自动保存</p>
                     <div class="flex flex-col gap-3">
                          <button @click="triggerMobileSync" class="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-bold active:scale-95 transition shadow-lg shadow-indigo-100 text-xs">同步 GitHub 仓库</button>
                          <label class="bg-slate-50 text-slate-600 px-6 py-4 rounded-2xl font-bold cursor-pointer hover:bg-slate-100 active:scale-95 transition text-xs border border-slate-100">添加本地目录 <input type="file" class="hidden" webkitdirectory @change="scanDirectory"></label>
@@ -181,7 +184,7 @@
                 <div v-if="showMobileSubMenu" class="absolute top-16 right-6 bg-white shadow-2xl rounded-2xl border border-slate-100 p-2 z-[110] w-48 overflow-hidden">
                     <button @click="triggerMobileSync" class="w-full flex items-center gap-3 p-3 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition text-left">
                         <i class="fa-brands fa-github text-indigo-500 w-5"></i>
-                        <span class="text-xs font-bold text-slate-600">同步 GitHub 仓库</span>
+                        <span class="text-xs font-bold text-slate-600">配置 GitHub 仓库</span>
                     </button>
                     <label class="w-full flex items-center gap-3 p-3 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition cursor-pointer">
                         <i class="fa-solid fa-folder-open text-amber-500 w-5"></i>
@@ -192,7 +195,7 @@
             </transition>
         </div>
         <div class="px-4 pt-2 pb-8 overflow-y-auto flex-1 custom-scroll">
-            <div v-if="library.length === 0" class="p-8 text-center text-slate-300 text-[10px] font-bold uppercase">暂无订阅频道</div>
+            <div v-if="library.length === 0" class="p-8 text-center text-slate-300 text-[10px] font-bold uppercase tracking-widest">无订阅内容</div>
             <div v-for="(podcast, idx) in library" :key="idx" @click="selectPodcast(idx); showMobileMenu = false" class="flex items-center gap-4 p-4 rounded-2xl mb-2" :class="activeIdx === idx ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50'">
                 <img :src="podcast.image" class="w-12 h-12 rounded-xl object-cover">
                 <span class="font-bold text-sm truncate flex-1">{{ podcast.name }}</span>
@@ -203,9 +206,12 @@
 
     <div v-if="showMobileSyncInput" class="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
-            <h3 class="text-lg font-black text-slate-800 mb-2">GitHub 同步</h3>
-            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6 leading-relaxed">请输入 用户名/仓库名<br>(RSS文件需存放在 /rss 文件夹下)</p>
-            <input v-model="githubRepo" type="text" placeholder="例如: xiandeshen/rss-repo" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 mb-6">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="text-lg font-black text-slate-800">GitHub 同步</h3>
+                <button v-if="githubRepo" @click="clearGithubRepo" class="text-red-400 text-[10px] font-bold uppercase tracking-widest bg-red-50 px-3 py-1 rounded-full">移除当前仓库</button>
+            </div>
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6 leading-relaxed">请输入 用户名/仓库名<br>(内容需存放在 /rss 文件夹下)</p>
+            <input v-model="githubRepo" type="text" placeholder="例如: xiandeshen/rss" class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 mb-6">
             <div class="flex gap-3">
                 <button @click="showMobileSyncInput = false" class="flex-1 py-4 rounded-2xl font-bold text-slate-400 text-sm">取消</button>
                 <button @click="confirmMobileSync" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-200">开始同步</button>
@@ -226,9 +232,9 @@
                 </div>
             </div>
             <div class="flex items-center gap-6">
-                <button @click="skip(-15)" class="text-slate-300 transition active:scale-90"><i class="fa-solid fa-rotate-left text-lg"></i></button>
+                <button @click="skip(-15)" class="text-slate-300"><i class="fa-solid fa-rotate-left text-lg"></i></button>
                 <button @click="togglePlay" class="w-12 h-12 md:w-14 md:h-14 bg-slate-900 text-white rounded-full flex items-center justify-center active:scale-95 transition shadow-lg shadow-slate-200"><i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-lg"></i></button>
-                <button @click="skip(30)" class="text-slate-300 transition active:scale-90"><i class="fa-solid fa-rotate-right text-lg"></i></button>
+                <button @click="skip(30)" class="text-slate-300"><i class="fa-solid fa-rotate-right text-lg"></i></button>
             </div>
             <div class="flex items-center justify-end gap-4 w-1/4 md:w-1/3">
                 <div class="hidden md:flex items-center gap-3 text-[11px] font-mono font-bold text-slate-400"><span>{{ formatTime(currentTime) }}</span><span class="opacity-30">/</span><span>{{ formatTime(duration) }}</span></div>
@@ -236,6 +242,7 @@
             </div>
         </div>
     </footer>
+    
     <div class="fullscreen-overlay overflow-hidden" :class="{ 'open': isFullscreen }">
         <div class="absolute inset-0 z-0">
             <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover opacity-30 blur-[100px]">
@@ -298,7 +305,6 @@ createApp({
         const duration = ref(0);
         const playingTrack = ref(null);
         const isSyncing = ref(false);
-        // 初始化时仓库名为空
         const githubRepo = ref(localStorage.getItem('podcast_github_repo') || '');
 
         const parseRSS = async (text, sourceName) => {
@@ -319,19 +325,21 @@ createApp({
         };
 
         const syncFromGithub = async () => {
+            // 基础检查：为空或不符合 "a/b" 格式则静默退出
             if (!githubRepo.value || !githubRepo.value.includes('/')) {
-                alert("请输入正确的仓库路径，如: 用户名/仓库名");
+                localStorage.removeItem('podcast_github_repo');
                 return;
             }
+            
             isSyncing.value = true;
             localStorage.setItem('podcast_github_repo', githubRepo.value);
+            
             try {
                 const apiURL = `https://api.github.com/repos/${githubRepo.value}/contents/rss`;
                 const response = await fetch(apiURL);
-                if (!response.ok) throw new Error('未找到仓库或 /rss 目录');
+                if (!response.ok) throw new Error('Repo not accessible');
                 const files = await response.json();
                 if (Array.isArray(files)) {
-                    // 同步前不清理旧列表，实现本地与云端共存
                     for (const file of files) {
                         if (file.name.endsWith('.rss') || file.name.endsWith('.xml')) {
                             const rssContent = await (await fetch(file.download_url)).text();
@@ -340,10 +348,21 @@ createApp({
                     }
                 }
             } catch (err) { 
-                alert("同步失败: " + err.message); 
+                console.warn("Sync failed, check repo path."); 
             } finally {
                 isSyncing.value = false;
                 if (library.value.length > 0 && activeIdx.value === -1) activeIdx.value = 0;
+            }
+        };
+
+        // 【新增】清除仓库逻辑
+        const clearGithubRepo = () => {
+            if (confirm("确定要移除当前仓库配置吗？")) {
+                githubRepo.value = '';
+                localStorage.removeItem('podcast_github_repo');
+                // 可选：是否清空当前 library
+                // library.value = []; activeIdx.value = -1;
+                showMobileSyncInput.value = false;
             }
         };
 
@@ -355,15 +374,8 @@ createApp({
             if (library.value.length > 0 && activeIdx.value === -1) activeIdx.value = 0;
         };
 
-        const triggerMobileSync = () => { 
-            showMobileSubMenu.value = false; 
-            showMobileSyncInput.value = true; 
-        };
-        const confirmMobileSync = () => { 
-            showMobileSyncInput.value = false; 
-            showMobileMenu.value = false; 
-            syncFromGithub(); 
-        };
+        const triggerMobileSync = () => { showMobileSubMenu.value = false; showMobileSyncInput.value = true; };
+        const confirmMobileSync = () => { showMobileSyncInput.value = false; syncFromGithub(); };
         const checkDescOverflow = () => {
             nextTick(() => {
                 if (descContainer.value) {
@@ -381,7 +393,7 @@ createApp({
         watch(activeIdx, () => { expandDesc.value = false; checkDescOverflow(); });
         onMounted(() => { if (githubRepo.value) syncFromGithub(); });
 
-        return { library, activeIdx, playingTrack, isPlaying, isFullscreen, showMobileMenu, showMobileSubMenu, showMobileSyncInput, expandDesc, isDescOverflow, playbackRate, currentTime, duration, scanDirectory, player, scrollContainer, descContainer, isSyncing, githubRepo, syncFromGithub, triggerMobileSync, confirmMobileSync,
+        return { library, activeIdx, playingTrack, isPlaying, isFullscreen, showMobileMenu, showMobileSubMenu, showMobileSyncInput, expandDesc, isDescOverflow, playbackRate, currentTime, duration, scanDirectory, player, scrollContainer, descContainer, isSyncing, githubRepo, syncFromGithub, triggerMobileSync, confirmMobileSync, clearGithubRepo,
             selectPodcast: (idx) => { activeIdx.value = idx; if (scrollContainer.value) scrollContainer.value.scrollTop = 0; },
             playTrack: (ep) => { playingTrack.value = ep; setTimeout(() => { if (player.value) { player.value.load(); player.value.play(); } }, 50); },
             formatTime: (s) => { if (isNaN(s)) return '0:00'; const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), rs = Math.floor(s%60); return h>0 ? `${h}:${m.toString().padStart(2,'0')}:${rs.toString().padStart(2,'0')}` : `${m}:${rs.toString().padStart(2,'0')}`; },
