@@ -18,7 +18,7 @@
             -webkit-appearance: none; width: 100%; height: 4px;
             background: rgba(255,255,255,0.2); border-radius: 2px;
             background-repeat: no-repeat; outline: none; cursor: pointer;
-            background-image: linear-gradient(#fff, #fff);
+            background-image: linear-gradient(#6366f1, #6366f1);
         }
         .player-bottom-bar input[type="range"] {
             background: #f1f5f9;
@@ -57,13 +57,23 @@
         }
         .drawer-overlay.open { opacity: 1; pointer-events: auto; }
 
-        /* 底部播放栏样式优化 */
+        /* 底部播放栏样式优化 - 移除 padding-bottom 适配，改由底部占位符处理 */
         .player-bottom-bar {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.08);
-            padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.05);
+            /* 提升层级，确保在页脚之上 */
+            z-index: 70;
         }
+
+        /* 仿 Apple Podcasts 的底部信息栏 */
+        .site-footer {
+            padding: 40px 24px calc(120px + env(safe-area-inset-bottom)) 24px;
+            background-color: #f8fafc;
+            text-align: center;
+            border-top: 1px solid #f1f5f9;
+        }
+
         .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
 </head>
@@ -145,12 +155,16 @@
                         </div>
                     </div>
 
-                    <div class="h-32 flex flex-col items-center justify-center opacity-20">
-                        <div class="w-8 h-[1px] bg-slate-900 mb-4"></div>
-                        <span class="text-[10px] font-bold tracking-[0.2em] uppercase">已显示全部内容</span>
-                    </div>
-
-                    <div :style="{ height: playingTrack ? '140px' : '40px' }" class="transition-[height] duration-300"></div>
+                    <footer class="site-footer">
+                        <div class="max-w-md mx-auto">
+                            <div class="w-8 h-[2px] bg-slate-200 mx-auto mb-6"></div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Copyright © 2026 Podcast AI</p>
+                            <p class="text-[10px] text-slate-300 leading-relaxed px-4">
+                                所有的内容均来自你扫描的 RSS 订阅源。<br>
+                                播放器仅供学习交流使用。
+                            </p>
+                        </div>
+                    </footer>
                 </div>
             </template>
             
@@ -161,12 +175,12 @@
         </main>
     </div>
 
-    <footer v-if="playingTrack" class="player-bottom-bar fixed bottom-0 left-0 right-0 z-[60] px-5 pt-3 md:px-12 bg-white">
+    <footer v-if="playingTrack" class="player-bottom-bar fixed bottom-0 left-0 right-0 px-5 pt-3 md:px-12 bg-white/95 border-t border-slate-100">
         <div class="absolute top-0 left-0 w-full transform -translate-y-1/2 px-0 flex items-center">
             <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
         </div>
         
-        <div class="flex items-center justify-between gap-4 py-3">
+        <div class="flex items-center justify-between gap-4 py-3" style="padding-bottom: calc(env(safe-area-inset-bottom) + 8px);">
             <div @click="isFullscreen = true" class="flex items-center gap-3 w-1/4 md:w-1/3 min-w-0 cursor-pointer">
                 <img :src="playingTrack.image" class="w-10 h-10 md:w-14 md:h-14 rounded-lg shadow-md object-cover">
                 <div class="min-w-0 hidden md:block">
@@ -176,9 +190,9 @@
             </div>
             
             <div class="flex items-center gap-6">
-                <button @click="skip(-15)" class="text-slate-300"><i class="fa-solid fa-rotate-left text-lg"></i></button>
+                <button @click="skip(-15)" class="text-slate-300 hover:text-indigo-500 transition"><i class="fa-solid fa-rotate-left text-lg"></i></button>
                 <button @click="togglePlay" class="w-12 h-12 md:w-14 md:h-14 bg-slate-900 text-white rounded-full flex items-center justify-center active:scale-95 transition shadow-lg"><i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-lg"></i></button>
-                <button @click="skip(30)" class="text-slate-300"><i class="fa-solid fa-rotate-right text-lg"></i></button>
+                <button @click="skip(30)" class="text-slate-300 hover:text-indigo-500 transition"><i class="fa-solid fa-rotate-right text-lg"></i></button>
             </div>
             
             <div class="flex items-center justify-end gap-4 w-1/4 md:w-1/3">
@@ -235,7 +249,7 @@
                 <input type="file" class="hidden" webkitdirectory @change="scanDirectory(); showMobileMenu = false">
             </label>
         </div>
-        <div class="px-4 pt-2 pb-8 overflow-y-auto flex-1 custom-scroll">
+        <div class="px-4 pt-2 pb-8 overflow-y-auto flex-1 custom-scroll" style="padding-bottom: calc(env(safe-area-inset-bottom) + 20px);">
             <div v-for="(podcast, idx) in library" :key="idx" @click="selectPodcast(idx); showMobileMenu = false" class="flex items-center gap-4 p-4 rounded-2xl mb-2" :class="activeIdx === idx ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50'">
                 <img :src="podcast.image" class="w-12 h-12 rounded-xl object-cover">
                 <span class="font-bold text-sm truncate flex-1">{{ podcast.name }}</span>
@@ -248,6 +262,7 @@
 </div>
 
 <script>
+// 此处保留你原有的 Vue 逻辑代码，未做逻辑变更以确保稳定性
 const { createApp, ref, watch, nextTick } = Vue;
 createApp({
     setup() {
