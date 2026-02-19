@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Podcast Step 1</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 彻底锁定视口，防止滚动混乱 */
+        html, body, #app { 
+            height: 100dvh; margin: 0; overflow: hidden; background: #fff;
+        }
+        .main-content {
+            flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body>
+<div id="app" class="flex flex-col h-full">
+    <header class="px-6 pt-12 pb-4 border-b border-gray-100 flex-shrink-0">
+        <button v-if="view === 'show'" @click="view = 'library'" class="text-blue-600 text-sm font-bold mb-2">
+            <i class="fas fa-chevron-left"></i> 资料库
+        </button>
+        <h1 class="text-3xl font-bold">{{ view === 'library' ? '资料库' : '节目详情' }}</h1>
+    </header>
+
+    <main class="main-content">
+        <div v-if="view === 'library'" class="p-6 grid grid-cols-2 gap-6">
+            <div v-for="i in 4" :key="i" @click="enterShow(i)" class="cursor-pointer">
+                <div class="aspect-square bg-gray-200 rounded-2xl mb-2 shadow-sm"></div>
+                <div class="font-bold text-sm">示例播客 {{i}}</div>
+                <div class="text-xs text-gray-400">点击进入</div>
+            </div>
+            <div class="h-20 col-span-2"></div> </div>
+
+        <div v-if="view === 'show'" class="p-6">
+            <div class="flex flex-col items-center mb-8">
+                <div class="w-48 h-48 bg-gray-200 rounded-3xl shadow-xl mb-4"></div>
+                <h2 class="text-xl font-bold">播客详情页</h2>
+            </div>
+            <div v-for="j in 10" :key="j" class="py-4 border-b border-gray-50">
+                <div class="font-bold">第 {{11-j}} 集节目内容</div>
+                <div class="text-xs text-gray-400 mt-1">2026年2月19日</div>
+            </div>
+            <div class="h-20"></div> </div>
+    </main>
+
+    <footer class="h-20 bg-gray-50/90 backdrop-blur-md border-t border-gray-100 px-6 flex items-center justify-between safe-bottom flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-gray-300 rounded-lg"></div>
+            <div>
+                <div class="text-xs font-bold">未在播放</div>
+                <div class="text-[10px] text-gray-400">请选择节目</div>
+            </div>
+        </div>
+        <div class="text-2xl text-gray-800">
+            <i class="fas fa-play"></i>
+        </div>
+    </footer>
+</div>
+
+<script>
+    const { createApp, ref } = Vue;
+    createApp({
+        setup() {
+            const view = ref('library');
+            const enterShow = (id) => {
+                view.value = 'show';
+            };
+            return { view, enterShow };
+        }
+    }).mount('#app');
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+</body>
+</html>
