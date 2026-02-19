@@ -22,10 +22,16 @@
     <style>
         [v-cloak] { display: none; }
         
-        /* 全局沉浸式背景适配 */
-        body {
-            padding-top: env(safe-area-inset-top);
+        /* 保持你的 baseline 背景色，并确保它延伸到系统区域 */
+        html, body {
             background-color: #ffffff;
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            /* 顶部适配：防止内容被刘海遮挡 */
+            padding-top: env(safe-area-inset-top);
         }
 
         /* 进度条基础样式 */
@@ -52,7 +58,7 @@
             transform: translateY(100%);
             transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex; flex-direction: column;
-            /* 增加安全区填充 */
+            /* 适配全屏时的刘海和底部 */
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
         }
@@ -66,7 +72,6 @@
             transform: translateY(105%);
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             max-height: 85vh; display: flex; flex-direction: column;
-            /* 底部安全区适配 */
             padding-bottom: env(safe-area-inset-bottom);
         }
         .mobile-drawer.open { transform: translateY(0); }
@@ -77,11 +82,12 @@
         }
         .drawer-overlay.open { opacity: 1; pointer-events: auto; }
 
-        /* 底部播放栏核心修改：适配手势横条并固定在安全区上方 */
+        /* 底部播放栏核心适配：利用 env 变量避开安卓导航条 */
         .player-bottom-bar {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
             box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.08);
+            /* 关键点：原本是 8px，现在加上安全区高度 */
             padding-bottom: calc(env(safe-area-inset-bottom) + 12px) !important;
         }
         .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -90,7 +96,6 @@
 <body class="bg-white text-slate-900 h-screen overflow-hidden antialiased select-none">
 
 <div id="app" v-cloak class="flex flex-col h-full relative">
-    
     <header class="hidden md:flex items-center justify-between px-8 py-4 border-b border-slate-100 bg-white z-50">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8">
@@ -164,10 +169,12 @@
                             <div class="text-[9px] md:text-[10px] text-slate-400 font-bold mt-1 uppercase">{{ ep.date }}</div>
                         </div>
                     </div>
+
                     <div class="h-32 flex flex-col items-center justify-center opacity-20">
                         <div class="w-8 h-[1px] bg-slate-900 mb-4"></div>
                         <span class="text-[10px] font-bold tracking-[0.2em] uppercase">已显示全部内容</span>
                     </div>
+
                     <div :style="{ height: playingTrack ? '140px' : '40px' }" class="transition-[height] duration-300"></div>
                 </div>
             </template>
@@ -192,11 +199,13 @@
                     <div class="text-[10px] font-bold text-slate-400">{{ playingTrack.channelName }}</div>
                 </div>
             </div>
+            
             <div class="flex items-center gap-6">
                 <button @click="skip(-15)" class="text-slate-300"><i class="fa-solid fa-rotate-left text-lg"></i></button>
                 <button @click="togglePlay" class="w-12 h-12 md:w-14 md:h-14 bg-slate-900 text-white rounded-full flex items-center justify-center active:scale-95 transition shadow-lg"><i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-lg"></i></button>
                 <button @click="skip(30)" class="text-slate-300"><i class="fa-solid fa-rotate-right text-lg"></i></button>
             </div>
+            
             <div class="flex items-center justify-end gap-4 w-1/4 md:w-1/3">
                 <div class="hidden md:flex items-center gap-3 text-[11px] font-mono font-bold text-slate-400"><span>{{ formatTime(currentTime) }}</span><span class="opacity-30">/</span><span>{{ formatTime(duration) }}</span></div>
                 <button @click="changeSpeed" class="w-10 h-10 border border-slate-100 rounded-full text-[9px] font-black text-slate-500">{{ playbackRate }}x</button>
@@ -302,7 +311,7 @@ createApp({
         watch(activeIdx, () => { expandDesc.value = false; checkDescOverflow(); });
         watch(playingTrack, (t) => { if (t) { document.title = t.title; const f = document.getElementById('favicon'); if (f) f.href = t.image; } });
 
-        // 原有目录扫描功能逻辑
+        // 完全保留你原有的 scanDirectory 功能
         const scanDirectory = async (e) => {
             const files = Array.from(e.target.files);
             const rssFiles = files.filter(f => f.name.endsWith('.rss') || f.name.endsWith('.xml'));
