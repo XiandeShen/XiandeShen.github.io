@@ -1,205 +1,74 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Podcast Pro - Step 2 Integrated</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        [v-cloak] { display: none; }
-        /* 布局锁定 */
-        html, body, #app { 
-            height: 100dvh; margin: 0; overflow: hidden; background: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-        .main-content {
-            flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-        }
-        .custom-scroll::-webkit-scrollbar { display: none; }
-        
-        /* 封面交互效果 */
-        .podcast-card img { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .podcast-card:active img { transform: scale(0.92); }
-        
-        /* 底部占位，防止最后的内容被播放条挡住 */
-        .content-bottom-space { height: 120px; }
-    </style>
-</head>
-<body>
+<div class="fullscreen-overlay" :class="{ 'open': isFullscreen }">
+    <div class="absolute inset-0 -z-10">
+        <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover opacity-40 blur-[80px] scale-125">
+        <div class="absolute inset-0 bg-black/60"></div>
+    </div>
 
-<div id="app" v-cloak class="flex flex-col h-full">
-    
-    <header class="px-6 pt-12 pb-4 border-b border-gray-50 flex-shrink-0 bg-white/80 backdrop-blur-lg sticky top-0 z-50 flex justify-between items-end">
-        <div>
-            <button v-if="view === 'show'" @click="view = 'library'" class="text-indigo-600 text-xs font-bold mb-1 flex items-center gap-1">
-                <i class="fas fa-chevron-left"></i> 资料库
-            </button>
-            <h1 class="text-3xl font-black tracking-tight text-gray-900">
-                {{ view === 'library' ? '资料库' : '节目详情' }}
-            </h1>
-        </div>
-        
-        <label class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-indigo-600 cursor-pointer active:scale-90 transition shadow-sm mb-1">
-            <i class="fas fa-plus"></i>
-            <input type="file" class="hidden" webkitdirectory @change="scanDirectory">
-        </label>
-    </header>
+    <div class="flex flex-col h-full px-8 pt-16 pb-12 text-white">
+        <button @click="isFullscreen = false" class="self-start w-10 h-10 flex items-center justify-center bg-white/10 rounded-full mb-8">
+            <i class="fas fa-chevron-down"></i>
+        </button>
 
-    <main class="main-content custom-scroll">
-        
-        <div v-if="view === 'library'" class="p-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-            <div v-for="(podcast, idx) in library" :key="idx" @click="selectPodcast(idx)" class="podcast-card cursor-pointer">
-                <div class="relative aspect-square mb-3">
-                    <img :src="podcast.image" class="w-full h-full object-cover rounded-[1.8rem] shadow-lg border border-gray-100">
-                </div>
-                <h3 class="text-sm font-bold text-gray-800 line-clamp-1 px-1">{{ podcast.title }}</h3>
-                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider px-1 mt-0.5 truncate">
-                    {{ podcast.author }}
-                </p>
-            </div>
-
-            <div v-if="library.length === 0" class="col-span-full py-20 flex flex-col items-center justify-center text-gray-300">
-                <i class="fas fa-broadcast-tower text-6xl mb-4"></i>
-                <p class="text-sm font-bold uppercase tracking-widest">请导入包含 RSS 文件的目录</p>
-            </div>
+        <div class="flex-1 flex flex-col items-center justify-center">
+            <img v-if="playingTrack" :src="playingTrack.image" class="w-72 h-72 md:w-96 md:h-96 rounded-[2.5rem] shadow-2xl mb-12 border border-white/10">
             
-            <div class="content-bottom-space col-span-full"></div>
+            <div class="w-full max-w-md text-center">
+                <h2 class="text-xl font-bold mb-2 line-clamp-2">{{ playingTrack?.title }}</h2>
+                <p class="text-indigo-400 font-bold text-xs uppercase tracking-widest">{{ playingTrack?.channelName }}</p>
+            </div>
         </div>
 
-        <div v-if="view === 'show' && currentPodcast" class="animate-in fade-in duration-300">
-            <div class="px-6 pt-8 pb-8 flex flex-col items-center text-center">
-                <img :src="currentPodcast.image" class="w-48 h-48 md:w-64 md:h-64 rounded-[2.5rem] shadow-2xl mb-6 border-4 border-white">
-                <h2 class="text-xl md:text-2xl font-black text-gray-900 tracking-tight px-4">{{ currentPodcast.title }}</h2>
-                <p class="text-indigo-600 font-bold text-sm mt-1 uppercase tracking-widest">{{ currentPodcast.author }}</p>
-            </div>
-
-            <div class="px-4 space-y-1">
-                <div v-for="ep in currentPodcast.episodes" :key="ep.url" @click="playTrack(ep)" 
-                     class="flex items-center gap-4 p-4 rounded-2xl active:bg-gray-100 transition-all cursor-pointer border-b border-gray-50 last:border-0">
-                    <div class="flex-1 min-w-0">
-                        <p class="text-[10px] font-bold text-gray-400 mb-1 uppercase">{{ ep.date }}</p>
-                        <h4 class="text-[15px] font-bold text-gray-800 line-clamp-2 leading-snug">{{ ep.title }}</h4>
-                    </div>
-                    <div class="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center text-indigo-500 flex-shrink-0">
-                        <i class="fas fa-play text-[10px] ml-0.5"></i>
-                    </div>
+        <div class="w-full max-w-md mx-auto space-y-8">
+            <div class="space-y-2">
+                <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full accent-white">
+                <div class="flex justify-between text-[10px] font-mono opacity-40">
+                    <span>{{ formatTime(currentTime) }}</span>
+                    <span>{{ formatTime(duration) }}</span>
                 </div>
             </div>
-            
-            <div class="content-bottom-space"></div>
-        </div>
-    </main>
 
-    <footer class="h-24 bg-white/90 backdrop-blur-xl border-t border-gray-100 px-6 pb-6 flex items-center justify-between flex-shrink-0 z-[100]">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-12 h-12 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden shadow-sm">
-                <img v-if="playingTrack" :src="playingTrack.image" class="w-full h-full object-cover">
-            </div>
-            <div class="min-w-0">
-                <div class="text-xs font-black truncate text-gray-800">
-                    {{ playingTrack ? playingTrack.title : '未在播放' }}
+            <div class="flex items-center justify-between px-4">
+                <button @click="changeSpeed" class="w-10 text-[10px] font-bold border border-white/20 rounded-md py-1">{{ playbackRate }}x</button>
+                <div class="flex items-center gap-10">
+                    <button @click="skip(-15)" class="text-2xl opacity-60"><i class="fas fa-undo"></i></button>
+                    <button @click="togglePlay" class="w-20 h-20 bg-white text-black rounded-full flex items-center justify-center shadow-xl active:scale-90 transition">
+                        <i :class="['fas', isPlaying ? 'fa-pause' : 'fa-play', 'text-2xl']" :class="{'ml-1': !isPlaying}"></i>
+                    </button>
+                    <button @click="skip(30)" class="text-2xl opacity-60"><i class="fas fa-redo"></i></button>
                 </div>
-                <div class="text-[10px] font-bold text-indigo-500 uppercase tracking-tight">
-                    {{ playingTrack ? playingTrack.channelName : '请选择单集' }}
-                </div>
-            </div>
+                <div class="w-10"></div> </div>
         </div>
-        <div class="flex items-center gap-6 ml-4">
-            <button class="text-gray-400 text-xl"><i class="fas fa-undo"></i></button>
-            <button class="w-12 h-12 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition">
-                <i class="fas fa-play ml-1"></i>
-            </button>
-            <button class="text-gray-400 text-xl"><i class="fas fa-redo"></i></button>
-        </div>
-    </footer>
-
+    </div>
 </div>
 
 <script>
-const { createApp, ref, computed, nextTick } = Vue;
+// 在你的 parseRSS 函数中替换以下部分
+const parseRSS = async (file) => {
+    // ... 前面的逻辑
+    const channel = dom.querySelector("channel");
+    
+    // 【简介修复】：多级查找
+    const description = 
+        dom.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "summary")[0]?.textContent ||
+        dom.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "subtitle")[0]?.textContent ||
+        channel.querySelector("description")?.textContent ||
+        "暂无简介";
 
-createApp({
-    setup() {
-        const view = ref('library');
-        const library = ref([]);
-        const activeIdx = ref(-1);
-        const playingTrack = ref(null);
+    // ... 剩下的逻辑
+    return { title, author, image, description, episodes };
+};
 
-        // 计算当前选中的播客
-        const currentPodcast = computed(() => {
-            return activeIdx.value !== -1 ? library.value[activeIdx.value] : null;
-        });
+// 在 setup() 中添加播放逻辑
+const togglePlay = () => {
+    if (!player.value) return;
+    isPlaying.value ? player.value.pause() : player.value.play();
+};
 
-        // 核心：深度解析 RSS
-        const parseRSS = async (file) => {
-            try {
-                const text = await file.text();
-                const dom = new DOMParser().parseFromString(text, "text/xml");
-                const channel = dom.querySelector("channel");
-                if (!channel) return null;
-
-                // 封面抓取 (多级备份)
-                const itunesImg = dom.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href");
-                const standardImg = channel.querySelector("image url")?.textContent;
-                const finalImg = itunesImg || standardImg || "https://via.placeholder.com/300?text=No+Cover";
-
-                // 作者抓取
-                const author = dom.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "author")[0]?.textContent 
-                              || channel.querySelector("copyright")?.textContent 
-                              || "RSS Feed";
-
-                const title = channel.querySelector("title")?.textContent || "未知节目";
-
-                // 单集抓取
-                const items = Array.from(dom.querySelectorAll("item")).map(item => {
-                    const enclosure = item.querySelector("enclosure");
-                    if (!enclosure) return null;
-                    
-                    return {
-                        title: item.querySelector("title")?.textContent,
-                        url: enclosure.getAttribute("url"),
-                        date: new Date(item.querySelector("pubDate")?.textContent).toLocaleDateString('zh-CN', {month:'short', day:'numeric'}),
-                        image: item.getElementsByTagNameNS("http://www.itunes.com/dtds/podcast-1.0.dtd", "image")[0]?.getAttribute("href") || finalImg
-                    };
-                }).filter(i => i !== null);
-
-                return { title, author, image: finalImg, episodes: items };
-            } catch (e) {
-                console.error("解析出错:", file.name, e);
-                return null;
-            }
-        };
-
-        const scanDirectory = async (e) => {
-            const files = Array.from(e.target.files);
-            const rssFiles = files.filter(f => f.name.endsWith('.rss') || f.name.endsWith('.xml'));
-            
-            for (const file of rssFiles) {
-                const podcast = await parseRSS(file);
-                if (podcast) library.value.push(podcast);
-            }
-            // 导入后自动显示资料库
-            view.value = 'library';
-        };
-
-        const selectPodcast = (idx) => {
-            activeIdx.value = idx;
-            view.value = 'show';
-            // 切换后滚动到顶
-            nextTick(() => {
-                document.querySelector('.main-content').scrollTop = 0;
-            });
-        };
-
-        const playTrack = (ep) => {
-            playingTrack.value = { ...ep, channelName: currentPodcast.value.title };
-        };
-
-        return { view, library, activeIdx, currentPodcast, playingTrack, scanDirectory, selectPodcast, playTrack };
-    }
-}).mount('#app');
+const playTrack = (ep) => {
+    playingTrack.value = { ...ep, channelName: currentPodcast.value.title };
+    nextTick(() => {
+        player.value.load();
+        player.value.play();
+    });
+};
 </script>
-</body>
-</html>
