@@ -14,179 +14,258 @@
     <style>
         [v-cloak] { display: none; }
         
-        /* 进度条基础样式 - 保持 audio css 基准 */
-        input[type="range"] {
-            -webkit-appearance: none; width: 100%; height: 4px;
-            background: rgba(255,255,255,0.2); border-radius: 2px;
-            background-repeat: no-repeat; outline: none; cursor: pointer;
-            background-image: linear-gradient(#6366f1, #6366f1);
+        /* 1. 基础容器：锁定屏幕，防止系统回弹干扰 */
+        html, body, #app {
+            height: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #fff;
         }
-        .player-bottom-bar input[type="range"] {
-            background: #f1f5f9;
-            background-image: linear-gradient(#6366f1, #6366f1);
+
+        /* 2. 进度条：audio css 专属基准 */
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 2px;
+            background: #e2e8f0; border-radius: 2px;
+            background-image: linear-gradient(#4f46e5, #4f46e5);
+            background-repeat: no-repeat; outline: none;
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 16px; width: 16px;
-            border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            -webkit-appearance: none; height: 12px; width: 12px;
+            border-radius: 50%; background: #4f46e5; border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
-        .custom-scroll::-webkit-scrollbar { width: 0px; display: none; }
-        
-        /* 全屏播放层 */
+
+        /* 3. 仿原生滚动条消失术 */
+        .custom-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scroll::-webkit-scrollbar { display: none; }
+
+        /* 4. 核心布局：Main 区域自动填满剩余空间 */
+        .app-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* 5. 底部 Mini Player：不再悬浮，而是容器的最后一个 Child */
+        .mini-player-container {
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-top: 0.5px solid rgba(0,0,0,0.08);
+            padding-bottom: env(safe-area-inset-bottom); /* 适配刘海屏手势条 */
+            z-index: 100;
+        }
+
+        /* 6. 版权页脚占位区 */
+        .footer-info-section {
+            padding: 40px 20px 100px 20px;
+            text-align: center;
+            background: #fbfbfd;
+            border-top: 0.5px solid #f1f1f1;
+        }
+
+        /* 7. 全屏遮罩层 */
         .fullscreen-overlay {
-            position: fixed; inset: 0; z-index: 200;
-            background: #000;
+            position: fixed; inset: 0; z-index: 2000;
+            background: #fff;
             transform: translateY(100%);
-            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex; flex-direction: column;
+            transition: transform 0.5s cubic-bezier(0.32, 1, 0.2, 1);
         }
         .fullscreen-overlay.open { transform: translateY(0); }
 
-        /* 移动端菜单抽屉 */
-        .mobile-drawer {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: white; z-index: 100;
-            border-top-left-radius: 2rem; border-top-right-radius: 2rem;
-            transform: translateY(105%);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            max-height: 85vh; display: flex; flex-direction: column;
-        }
-        .mobile-drawer.open { transform: translateY(0); }
-        .drawer-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(4px); z-index: 90;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-        }
-        .drawer-overlay.open { opacity: 1; pointer-events: auto; }
-
-        /* 核心修复：底部播放栏 */
-        .player-bottom-bar {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.05);
-            /* 适配底部安全区 */
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 80;
-        }
-
-        /* 学习 Apple Podcasts 的版权区样式 */
-        .apple-style-footer {
-            padding: 60px 24px 40px 24px;
-            background-color: #f8fafc;
-            text-align: center;
-        }
-
-        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .episode-card:active { background-color: #f5f5f7; transform: scale(0.98); transition: 0.2s; }
     </style>
 </head>
-<body class="bg-white text-slate-900 h-screen overflow-hidden antialiased select-none">
+<body class="antialiased select-none">
 
-<div id="app" v-cloak class="flex flex-col h-full relative">
+<div id="app" v-cloak class="app-layout">
     
-    <header class="hidden md:flex items-center justify-between px-8 py-4 border-b border-slate-100 bg-white z-50">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8">
-                <svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" rx="28" fill="url(#g-logo-pc)"/><path d="M30 50v-10M40 50v-20M50 50v-30M60 50v-20M70 50v-10" stroke="white" stroke-width="8" stroke-linecap="round"/><circle cx="50" cy="70" r="8" fill="white"/></svg>
+    <header class="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md sticky top-0 z-[150]">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                <i class="fa-solid fa-podcast text-sm"></i>
             </div>
-            <h1 class="text-xl font-black tracking-tighter text-slate-800 uppercase">Podcast</h1>
+            <span class="font-black text-xl tracking-tighter text-slate-800">PODCAST</span>
         </div>
-        <label v-if="library.length > 0" class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl font-bold cursor-pointer text-xs border border-slate-100">
-            <i class="fa-solid fa-plus text-indigo-500"></i> 添加目录 <input type="file" class="hidden" webkitdirectory @change="scanDirectory">
-        </label>
+        <div class="flex items-center gap-4">
+            <label class="p-2 text-indigo-600 cursor-pointer active:opacity-50 transition">
+                <i class="fa-solid fa-folder-plus text-xl"></i>
+                <input type="file" class="hidden" webkitdirectory @change="scanDirectory">
+            </label>
+            <button v-if="library.length > 0" @click="showMobileMenu = true" class="md:hidden p-2 text-slate-600">
+                <i class="fa-solid fa-bars-staggered text-xl"></i>
+            </button>
+        </div>
     </header>
 
-    <header class="flex items-center justify-between px-6 py-4 md:hidden border-b border-slate-50 bg-white z-30 flex-shrink-0">
-        <div class="flex items-center gap-2.5">
-            <h1 class="text-lg font-black tracking-tighter text-slate-800 uppercase">Podcast</h1>
-        </div>
-        <button v-if="library.length > 0" @click="showMobileMenu = true" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center">
-            <i class="fa-solid fa-list-ul"></i>
-        </button>
-    </header>
-
-    <div class="flex flex-1 overflow-hidden">
-        <aside v-if="library.length > 0" class="hidden md:flex flex-col w-72 border-r bg-slate-50/30 flex-shrink-0">
-            <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-1 custom-scroll">
+    <div class="flex flex-1 overflow-hidden relative">
+        
+        <aside v-if="library.length > 0" class="hidden md:flex flex-col w-80 border-r border-slate-50 bg-slate-50/50">
+            <div class="p-6 font-bold text-slate-400 text-[10px] uppercase tracking-widest">我的频道</div>
+            <nav class="flex-1 overflow-y-auto px-4 space-y-2 custom-scroll">
                 <div v-for="(podcast, idx) in library" :key="idx" @click="selectPodcast(idx)"
-                     class="p-3 rounded-2xl cursor-pointer flex items-center gap-4"
-                     :class="activeIdx === idx ? 'bg-white shadow-sm ring-1 ring-slate-200' : 'text-slate-500'">
-                    <img :src="podcast.image" class="w-10 h-10 rounded-xl object-cover">
-                    <span class="text-xs font-extrabold truncate">{{ podcast.name }}</span>
+                     class="group p-3 rounded-2xl cursor-pointer transition flex items-center gap-4"
+                     :class="activeIdx === idx ? 'bg-white shadow-xl shadow-slate-200/50' : 'hover:bg-white/60'">
+                    <img :src="podcast.image" class="w-12 h-12 rounded-xl object-cover shadow-sm">
+                    <div class="min-w-0">
+                        <div class="text-[13px] font-bold text-slate-800 truncate">{{ podcast.name }}</div>
+                        <div class="text-[10px] text-slate-400 font-medium">{{ podcast.episodes.length }} 集</div>
+                    </div>
                 </div>
             </nav>
         </aside>
 
-        <main ref="scrollContainer" class="flex-1 overflow-y-auto bg-white custom-scroll relative">
+        <main ref="scrollContainer" class="flex-1 overflow-y-auto custom-scroll bg-white">
             <template v-if="activeIdx !== -1 && library.length > 0">
-                <div class="p-6 md:px-12 md:pt-12 md:pb-6 flex flex-col gap-6 bg-gradient-to-b from-slate-50/50 to-white">
-                    <div class="flex flex-row items-center md:items-end gap-5">
-                        <img :src="library[activeIdx].image" class="w-24 h-24 md:w-44 md:h-44 rounded-2xl shadow-xl object-cover">
-                        <div class="flex-1 min-w-0">
-                            <h2 class="text-xl md:text-4xl font-black text-slate-800 truncate">{{ library[activeIdx].name }}</h2>
-                            <p class="text-slate-400 text-[10px] font-bold mt-1 uppercase">{{ library[activeIdx].episodes.length }} Episodes</p>
+                <div class="px-6 py-8 md:px-12 flex flex-col md:flex-row gap-8 items-center md:items-start border-b border-slate-50">
+                    <img :src="library[activeIdx].image" class="w-48 h-48 md:w-56 md:h-56 rounded-[2rem] shadow-2xl object-cover border-4 border-white">
+                    <div class="flex-1 text-center md:text-left">
+                        <h2 class="text-2xl md:text-4xl font-black text-slate-900 leading-tight">{{ library[activeIdx].name }}</h2>
+                        <p class="text-indigo-600 font-bold text-sm mt-2">作者 · RSS Feed</p>
+                        <div class="mt-4 text-slate-500 text-xs leading-relaxed max-w-2xl line-clamp-3">
+                            {{ library[activeIdx].description }}
                         </div>
                     </div>
                 </div>
 
-                <div class="px-4 md:px-12 py-2">
-                    <div v-for="ep in library[activeIdx].episodes" @click="playTrack(ep)" 
-                         class="flex items-center gap-4 p-4 rounded-2xl cursor-pointer active:bg-slate-100 transition-colors" 
-                         :class="playingTrack && playingTrack.url === ep.url ? 'bg-indigo-50/50' : ''">
-                        <img :src="ep.image" class="w-12 h-12 rounded-lg object-cover">
-                        <div class="flex-1 min-w-0">
-                            <div class="text-[14px] font-bold truncate text-slate-700" :class="playingTrack && playingTrack.url === ep.url ? 'text-indigo-600' : ''">{{ ep.title }}</div>
-                            <div class="text-[10px] text-slate-400 font-bold uppercase">{{ ep.date }}</div>
+                <div class="px-4 py-6 md:px-12">
+                    <h3 class="font-black text-lg mb-6 text-slate-800">所有节目</h3>
+                    <div class="space-y-1">
+                        <div v-for="ep in library[activeIdx].episodes" @click="playTrack(ep)" 
+                             class="episode-card group flex items-center gap-4 p-4 rounded-2xl cursor-pointer">
+                            <div class="relative w-12 h-12 flex-shrink-0">
+                                <img :src="ep.image" class="w-full h-full rounded-xl object-cover">
+                                <div v-if="playingTrack?.url === ep.url" class="absolute inset-0 bg-indigo-600/40 rounded-xl flex items-center justify-center text-white text-xs">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-[14px] font-bold text-slate-700 truncate group-hover:text-indigo-600">{{ ep.title }}</div>
+                                <div class="text-[10px] text-slate-400 font-bold mt-1 uppercase">{{ ep.date }}</div>
+                            </div>
+                            <div class="text-slate-300 group-hover:text-indigo-400 transition">
+                                <i class="fa-solid fa-circle-play text-xl"></i>
+                            </div>
                         </div>
                     </div>
-
-                    <footer class="apple-style-footer mt-8">
-                        <div class="w-12 h-1 bg-slate-200 mx-auto rounded-full mb-6"></div>
-                        <p class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Copyright © 2026 Podcast AI</p>
-                        <p class="text-[10px] text-slate-400/80 leading-relaxed max-w-xs mx-auto">
-                            内容基于扫描的 RSS 订阅源生成。所有权利归原作者所有。
-                        </p>
-                    </footer>
-
-                    <div :style="{ height: playingTrack ? '160px' : '40px' }" class="transition-all duration-500"></div>
                 </div>
+
+                <section class="footer-info-section">
+                    <div class="w-8 h-[2px] bg-slate-200 mx-auto mb-8"></div>
+                    <div class="text-[11px] font-black text-slate-400 tracking-widest uppercase mb-4">© 2026 PODCAST AI</div>
+                    <p class="text-[10px] text-slate-300 leading-loose max-w-xs mx-auto">
+                        本播放器遵循 RSS 公开协议<br>
+                        音频内容由内容发布者持有版权<br>
+                        音频版本样式：audio css
+                    </p>
+                </section>
             </template>
             
             <div v-else class="h-full flex flex-col items-center justify-center p-12 text-center">
-                <label class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold cursor-pointer shadow-xl">添加目录 <input type="file" class="hidden" webkitdirectory @change="scanDirectory"></label>
+                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-200"></i>
+                </div>
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-8">等待数据载入</p>
+                <label class="bg-indigo-600 text-white px-10 py-4 rounded-full font-bold cursor-pointer hover:bg-indigo-700 active:scale-95 transition shadow-lg shadow-indigo-100">
+                    添加 RSS 目录 <input type="file" class="hidden" webkitdirectory @change="scanDirectory">
+                </label>
             </div>
         </main>
     </div>
 
-    <footer v-if="playingTrack" class="player-bottom-bar fixed bottom-0 left-0 right-0">
-        <div class="absolute top-0 left-0 w-full transform -translate-y-1/2 px-0">
-            <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
+    <footer v-if="playingTrack" class="mini-player-container">
+        <div class="px-0 h-0 relative">
+            <input type="range" :max="duration" :value="currentTime" @input="seek" 
+                   class="absolute -top-[1px] left-0 w-full z-10" 
+                   :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
         </div>
-        
-        <div class="flex items-center justify-between gap-4 px-5 py-4">
+
+        <div class="px-5 py-3 flex items-center justify-between">
             <div @click="isFullscreen = true" class="flex items-center gap-3 w-1/4 md:w-1/3 min-w-0">
-                <img :src="playingTrack.image" class="w-11 h-11 rounded-lg shadow-md object-cover flex-shrink-0">
+                <img :src="playingTrack.image" class="w-12 h-12 rounded-xl shadow-lg flex-shrink-0 object-cover border border-black/5">
                 <div class="min-w-0 hidden md:block">
-                    <div class="text-[13px] font-black truncate text-slate-800">{{ playingTrack.title }}</div>
-                    <div class="text-[10px] font-bold text-slate-400 truncate">{{ playingTrack.channelName }}</div>
+                    <div class="text-[13px] font-bold text-slate-800 truncate">{{ playingTrack.title }}</div>
+                    <div class="text-[10px] text-indigo-500 font-bold">{{ playingTrack.channelName }}</div>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-7">
+
+            <div class="flex items-center gap-8">
                 <button @click="skip(-15)" class="text-slate-400 active:text-indigo-600"><i class="fa-solid fa-rotate-left text-lg"></i></button>
-                <button @click="togglePlay" class="w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"><i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-lg"></i></button>
+                <button @click="togglePlay" class="w-11 h-11 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition">
+                    <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-lg"></i>
+                </button>
                 <button @click="skip(30)" class="text-slate-400 active:text-indigo-600"><i class="fa-solid fa-rotate-right text-lg"></i></button>
             </div>
-            
+
             <div class="flex items-center justify-end w-1/4 md:w-1/3">
-                <button @click="changeSpeed" class="w-10 h-10 border border-slate-100 rounded-full text-[10px] font-black text-slate-500 bg-slate-50">{{ playbackRate }}x</button>
+                <button @click="changeSpeed" class="px-3 py-1 bg-slate-50 border border-slate-100 rounded-full text-[10px] font-black text-slate-600">
+                    {{ playbackRate }}x
+                </button>
             </div>
         </div>
     </footer>
+
+    <div class="fullscreen-overlay overflow-hidden" :class="{ 'open': isFullscreen }">
+        <div class="h-full flex flex-col p-8 bg-white">
+            <header class="flex justify-between items-center mb-10">
+                <button @click="isFullscreen = false" class="text-slate-400 text-2xl"><i class="fa-solid fa-chevron-down"></i></button>
+                <div class="text-[10px] font-black text-slate-300 tracking-[0.3em] uppercase">正在播放</div>
+                <div class="w-6"></div>
+            </header>
+            
+            <div class="flex-1 flex flex-col items-center justify-center gap-12 max-w-lg mx-auto w-full">
+                <img v-if="playingTrack" :src="playingTrack.image" class="w-full aspect-square rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] object-cover">
+                
+                <div class="w-full text-center">
+                    <h2 class="text-xl font-black text-slate-900 mb-2 px-4 line-clamp-2 leading-tight">{{ playingTrack?.title }}</h2>
+                    <p class="text-indigo-600 font-bold text-sm tracking-widest uppercase">{{ playingTrack?.channelName }}</p>
+                </div>
+
+                <div class="w-full space-y-3">
+                    <input type="range" :max="duration" :value="currentTime" @input="seek" class="w-full" :style="{ backgroundSize: (currentTime / duration * 100) + '% 100%' }">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-300 tracking-tighter">
+                        <span>{{ formatTime(currentTime) }}</span>
+                        <span>{{ formatTime(duration) }}</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-12">
+                    <button @click="skip(-15)" class="text-2xl text-slate-300"><i class="fa-solid fa-rotate-left"></i></button>
+                    <button @click="togglePlay" class="w-20 h-20 bg-slate-900 text-white rounded-full flex items-center justify-center text-3xl shadow-2xl active:scale-95 transition">
+                        <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="ml-1"></i>
+                    </button>
+                    <button @click="skip(30)" class="text-2xl text-slate-300"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+            </div>
+            
+            <footer class="mt-auto pt-8 flex justify-center pb-env">
+                 <button @click="changeSpeed" class="text-indigo-600 font-black text-xs uppercase">{{ playbackRate }}x 播放倍速</button>
+            </footer>
+        </div>
+    </div>
+
+    <div v-if="showMobileMenu" @click="showMobileMenu = false" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200]"></div>
+    <div class="fixed bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] z-[210] transition-transform duration-300 shadow-2xl"
+         :style="{ transform: showMobileMenu ? 'translateY(0)' : 'translateY(100%)' }">
+        <div class="p-6">
+            <div class="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-6"></div>
+            <h4 class="font-black text-center mb-6 text-slate-400 text-xs tracking-widest uppercase">频道列表</h4>
+            <div class="max-h-[60vh] overflow-y-auto custom-scroll space-y-4 pb-8">
+                <div v-for="(podcast, idx) in library" :key="idx" @click="selectPodcast(idx); showMobileMenu = false"
+                     class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 active:bg-indigo-50 transition-colors">
+                    <img :src="podcast.image" class="w-12 h-12 rounded-xl object-cover">
+                    <span class="font-bold text-sm text-slate-800 truncate">{{ podcast.name }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <audio ref="player" v-if="playingTrack" :src="playingTrack.url" @timeupdate="onUpdate" @loadedmetadata="onLoaded" @playing="isPlaying = true" @pause="isPlaying = false"></audio>
 </div>
 
 <script>
-const { createApp, ref, watch, nextTick } = Vue;
+const { createApp, ref, watch } = Vue;
 createApp({
     setup() {
         const player = ref(null);
@@ -201,7 +280,7 @@ createApp({
         const duration = ref(0);
         const playingTrack = ref(null);
 
-        // ... 保留原有 scanDirectory, selectPodcast, playTrack 等逻辑 ...
+        // 逻辑保持 audio css 基准，确保功能稳健
         const scanDirectory = async (e) => {
             const files = Array.from(e.target.files);
             const rssFiles = files.filter(f => f.name.endsWith('.rss') || f.name.endsWith('.xml'));
